@@ -10,3 +10,4 @@ require_once "templates/header.php";
 include_once "conexion/bd.php";
 ?>
 Cliente
+<?php require_once "templates/footer.php"; ?>

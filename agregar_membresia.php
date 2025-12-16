@@ -126,6 +126,9 @@ require_once "templates/header.php";
         flex: 1;
         margin-left: 250px;
         transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
     }
 
     /* Header */
@@ -663,9 +666,6 @@ require_once "templates/header.php";
             </button>
         </div>
     </form>
-</div>
-</div>
-</div>
 </div>
 
 <script>

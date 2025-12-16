@@ -8,218 +8,345 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 }
 require_once "templates/header.php";
 include_once "conexion/bd.php";
+
+// Obteber cantidas de usuarios del tipo socio
+$sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM usuarios WHERE rol = 'socio'");
+$sql->execute();
+$cantidadSocios = $sql->fetch(PDO::FETCH_OBJ);
+
+// Obtener la cantidad de clases existentes
+$sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM clases");
+$sql->execute();
+$cantidadClases = $sql->fetch(PDO::FETCH_OBJ);
+
+// Ovtener el total de ingresos del mes actual
+$mesActual = date('m');
+$anioActual = date('Y');
+$sql = $conexion->prepare("SELECT SUM(monto) as total FROM pagos WHERE MONTH(fecha_pago) = :mes AND YEAR(fecha_pago) = :anio");
+$sql->bindParam(':mes', $mesActual, PDO::PARAM_INT);
+$sql->bindParam(':anio', $anioActual, PDO::PARAM_INT);
+$sql->execute();
+$totalIngresos = $sql->fetch(PDO::FETCH_OBJ);
+
+// Obtener socios recientes
+$sql = $conexion->prepare("SELECT CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre, usuarios.email as email, membresias.nombre as membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ORDER BY usuarios.fecha_registro DESC LIMIT 5");
+$sql->execute();
+$sociosRecientes = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// CONSULTA PARA EL PRIMER GRÁFICO: Distribución de Membresías
+$sql = $conexion->prepare("
+    SELECT 
+        m.nombre as membresia,
+        COUNT(mu.id_usuario) as cantidad
+    FROM membresia_usuario mu
+    INNER JOIN membresias m ON mu.id_membresia = m.id
+    GROUP BY m.nombre
+    ORDER BY cantidad DESC
+");
+$sql->execute();
+$distribucionMembresias = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// CONSULTA PARA EL SEGUNDO GRÁFICO: Ingresos por Mes (últimos 6 meses)
+$sql = $conexion->prepare("
+    SELECT 
+        MONTHNAME(fecha_pago) as mes,
+        SUM(monto) as total
+    FROM pagos 
+    WHERE fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY MONTH(fecha_pago), MONTHNAME(fecha_pago)
+    ORDER BY MONTH(fecha_pago) ASC
+");
+$sql->execute();
+$ingresosPorMes = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// Preparar datos para Chart.js
+$labelsMembresias = [];
+$dataMembresias = [];
+$colorsMembresias = [
+    'rgba(255, 99, 132, 0.7)',
+    'rgba(54, 162, 235, 0.7)',
+    'rgba(255, 206, 86, 0.7)',
+    'rgba(75, 192, 192, 0.7)',
+    'rgba(153, 102, 255, 0.7)',
+    'rgba(255, 159, 64, 0.7)'
+];
+
+foreach ($distribucionMembresias as $item) {
+    $labelsMembresias[] = htmlspecialchars($item->membresia);
+    $dataMembresias[] = $item->cantidad;
+}
+
+$labelsMeses = [];
+$dataIngresos = [];
+foreach ($ingresosPorMes as $item) {
+    $labelsMeses[] = htmlspecialchars($item->mes);
+    $dataIngresos[] = $item->total;
+}
+
+// Si no hay datos de ingresos, mostrar datos de ejemplo
+if (empty($dataIngresos)) {
+    $labelsMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'];
+    $dataIngresos = [1500, 1800, 2200, 1900, 2400, 2100];
+}
 ?>
+<!-- Incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- Contenido -->
-            <div class="content">
-                <div class="page-header">
-                    <h1>Dashboard</h1>
-                </div>
+<div class="content">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+    </div>
 
-                <!-- Tarjetas de Métricas -->
-                <div class="metrics">
-                    <div class="metric-card">
-                        <div class="metric-icon bg-secondary">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="metric-info">
-                            <h3>1,248</h3>
-                            <p>Miembros Activos</p>
-                            <div class="metric-trend trend-up">
-                                <i class="fas fa-arrow-up"></i> 5.2% este mes
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon bg-success">
-                            <i class="fas fa-dumbbell"></i>
-                        </div>
-                        <div class="metric-info">
-                            <h3>342</h3>
-                            <p>Entrenamientos Hoy</p>
-                            <div class="metric-trend trend-up">
-                                <i class="fas fa-arrow-up"></i> 12.7% hoy
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon bg-warning">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div class="metric-info">
-                            <h3>18</h3>
-                            <p>Clases Programadas</p>
-                            <div class="metric-trend trend-down">
-                                <i class="fas fa-arrow-down"></i> 2 hoy
-                            </div>
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-icon bg-info">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                        <div class="metric-info">
-                            <h3>$12,580</h3>
-                            <p>Ingresos del Mes</p>
-                            <div class="metric-trend trend-up">
-                                <i class="fas fa-arrow-up"></i> 8.3% este mes
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Tarjetas de Métricas -->
+    <div class="metrics">
+        <div class="metric-card">
+            <div class="metric-icon bg-secondary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="metric-info">
+                <h3><?php echo $cantidadSocios->cantidad; ?></h3>
+                <p>Socios Activos</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon bg-success">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+            <div class="metric-info">
+                <h3>342</h3>
+                <p>Entrenamientos Hoy</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon bg-warning">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="metric-info">
+                <h3><?php echo htmlspecialchars($cantidadClases->cantidad); ?></h3>
+                <p>Clases Existentes</p>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon bg-info">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="metric-info">
+                <h3>$<?php echo htmlspecialchars($totalIngresos->total ?? 0); ?></h3>
+                <p>Ingresos del Mes</p>
+            </div>
+        </div>
+    </div>
 
-                <!-- Gráficos y Actividad -->
-                <div class="dashboard-content">
-                    <div>
-                        <div class="chart-container">
-                            <h2>Asistencia Mensual</h2>
-                            <div class="chart-wrapper">
-                                <canvas id="attendanceChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="members-table">
-                            <h2>Miembros Recientes</h2>
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Membresía</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>María González</td>
-                                        <td>maria@email.com</td>
-                                        <td>Premium</td>
-                                        <td><span class="status-badge status-active">Activo</span></td>
-                                        <td>
-                                            <button class="btn-sm" style="background: var(--info); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Carlos Ruiz</td>
-                                        <td>carlos@email.com</td>
-                                        <td>Básica</td>
-                                        <td><span class="status-badge status-active">Activo</span></td>
-                                        <td>
-                                            <button class="btn-sm" style="background: var(--info); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Ana López</td>
-                                        <td>ana@email.com</td>
-                                        <td>Premium</td>
-                                        <td><span class="status-badge status-inactive">Inactivo</span></td>
-                                        <td>
-                                            <button class="btn-sm" style="background: var(--info); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Roberto Silva</td>
-                                        <td>roberto@email.com</td>
-                                        <td>VIP</td>
-                                        <td><span class="status-badge status-active">Activo</span></td>
-                                        <td>
-                                            <button class="btn-sm" style="background: var(--info); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="recent-activity">
-                            <h2>Actividad Reciente</h2>
-                            <ul class="activity-list">
-                                <li class="activity-item">
-                                    <div class="activity-icon bg-secondary">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div class="activity-info">
-                                        <h4>Nuevo Miembro</h4>
-                                        <p>María González se registró</p>
-                                        <div class="activity-time">Hace 2 horas</div>
-                                    </div>
-                                </li>
-                                <li class="activity-item">
-                                    <div class="activity-icon bg-success">
-                                        <i class="fas fa-dumbbell"></i>
-                                    </div>
-                                    <div class="activity-info">
-                                        <h4>Entrenamiento Completado</h4>
-                                        <p>Carlos Ruiz completó su rutina</p>
-                                        <div class="activity-time">Hace 3 horas</div>
-                                    </div>
-                                </li>
-                                <li class="activity-item">
-                                    <div class="activity-icon bg-warning">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                    </div>
-                                    <div class="activity-info">
-                                        <h4>Pago Recibido</h4>
-                                        <p>Ana López pagó su membresía</p>
-                                        <div class="activity-time">Hace 5 horas</div>
-                                    </div>
-                                </li>
-                                <li class="activity-item">
-                                    <div class="activity-icon bg-info">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div class="activity-info">
-                                        <h4>Clase Agendada</h4>
-                                        <p>Yoga avanzado - 15 cupos llenos</p>
-                                        <div class="activity-time">Hace 1 día</div>
-                                    </div>
-                                </li>
-                                <li class="activity-item">
-                                    <div class="activity-icon bg-secondary">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div class="activity-info">
-                                        <h4>Nuevo Entrenador</h4>
-                                        <p>Roberto Silva se unió al equipo</p>
-                                        <div class="activity-time">Hace 2 días</div>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="quick-actions">
-                            <h2>Acciones Rápidas</h2>
-                            <div class="actions-grid">
-                                <a href="#" class="action-btn">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span>Nuevo Miembro</span>
-                                </a>
-                                <a href="#" class="action-btn">
-                                    <i class="fas fa-calendar-plus"></i>
-                                    <span>Agendar Clase</span>
-                                </a>
-                                <a href="#" class="action-btn">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                    <span>Registrar Pago</span>
-                                </a>
-                                <a href="#" class="action-btn">
-                                    <i class="fas fa-chart-bar"></i>
-                                    <span>Generar Reporte</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Gráficos y Actividad -->
+    <div class="dashboard-content">
+        <div>
+            <div class="chart-container">
+                <h2>Distribución de Membresías</h2>
+                <div class="chart-wrapper">
+                    <canvas id="membershipChart"></canvas>
                 </div>
             </div>
+            
+            <div class="members-table">
+                <h2>Socios Recientes</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Membresía</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($sociosRecientes as $socio): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($socio->nombre); ?></td>
+                            <td><?= htmlspecialchars($socio->email); ?></td>
+                            <td><?= htmlspecialchars($socio->membresia); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <div class="chart-container">
+                <h2>Ingresos (Últimos 6 Meses)</h2>
+                <div class="chart-wrapper">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <h2>Acciones Rápidas</h2>
+                <div class="actions-grid">
+                    <a href="#" class="action-btn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Nuevo Miembro</span>
+                    </a>
+                    <a href="#" class="action-btn">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Agendar Clase</span>
+                    </a>
+                    <a href="#" class="action-btn">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Registrar Pago</span>
+                    </a>
+                    <a href="#" class="action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Generar Reporte</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gráfico de Distribución de Membresías (Gráfico de Dona)
+const membershipCtx = document.getElementById('membershipChart').getContext('2d');
+const membershipChart = new Chart(membershipCtx, {
+    type: 'doughnut',
+    data: {
+        labels: <?php echo json_encode($labelsMembresias); ?>,
+        datasets: [{
+            data: <?php echo json_encode($dataMembresias); ?>,
+            backgroundColor: <?php echo json_encode(array_slice($colorsMembresias, 0, count($labelsMembresias))); ?>,
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 15
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += context.raw + ' socios';
+                        return label;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Ingresos (Gráfico de Línea)
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueChart = new Chart(revenueCtx, {
+    type: 'line',
+    data: {
+        labels: <?php echo json_encode($labelsMeses); ?>,
+        datasets: [{
+            label: 'Ingresos ($)',
+            data: <?php echo json_encode($dataIngresos); ?>,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    drawBorder: false
+                },
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value;
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 14
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Ingresos: $' + context.raw;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+
+<style>
+.chart-container {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.chart-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+}
+
+.members-table {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.members-table h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+}
+</style>
 <?php
 require_once 'templates/footer.php';
 ?>

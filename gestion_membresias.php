@@ -585,10 +585,6 @@ $membresias = $sql->fetchAll(PDO::FETCH_OBJ);
             <?php } ?>
         <?php endif; ?>
     </div>
-</div>
-</div>
-</div>
-</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Toggle sidebar

@@ -16,7 +16,7 @@ require_once "templates/header.php";
 include_once "conexion/bd.php";
 
 // Obtener los pago desde la base de datos
-$sql=$conexion->prepare("SELECT usuarios.id as id_socio, CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia,monto,fecha_pago,metodo_pago FROM pagos INNER JOIN usuarios ON pagos.id_usuario = usuarios.id INNER JOIN membresias ON pagos.id_membresia = membresias.id ORDER BY fecha_pago DESC");
+$sql=$conexion->prepare("SELECT pagos.id as id_pago, usuarios.id as id_socio, CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia,monto,fecha_pago,metodo_pago FROM pagos INNER JOIN usuarios ON pagos.id_usuario = usuarios.id INNER JOIN membresias ON pagos.id_membresia = membresias.id ORDER BY fecha_pago DESC");
 $sql->execute();
 $pagos=$sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -215,6 +215,36 @@ foreach ($pagosPorMes as $pago) {
         opacity: 0.8;
     }
 
+    /* Boton Generar Reporte */
+    #btnGenerarReporte {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-decoration: none;
+        color: #fff;
+        background: linear-gradient(90deg, #e74c3c 0%, #ff8a65 60%);
+        border: none;
+        box-shadow: 0 8px 20px rgba(231, 76, 60, 0.18);
+        transition: transform 160ms cubic-bezier(.4,0,.2,1), box-shadow 160ms cubic-bezier(.4,0,.2,1), opacity 160ms;
+    }
+
+    #btnGenerarReporte i { font-size: 1.05rem; }
+
+    #btnGenerarReporte:hover,
+    #btnGenerarReporte:focus {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 30px rgba(231, 76, 60, 0.22);
+        opacity: 0.98;
+        outline: none;
+    }
+
+    @media (max-width: 768px) {
+        #btnGenerarReporte { padding: 10px 14px; font-size: 0.9rem; }
+    }
+
     /* Información del Socio */
     .member-info {
         display: flex;
@@ -336,6 +366,12 @@ foreach ($pagosPorMes as $pago) {
 <!-- Contenido de la página -->
 <div class="content">
     <div class="payments-container">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h1>Gestión de Pagos</h1>
+            <a href="reportesPDF/reporte_pagos_pdf.php" id="btnGenerarReporte" class="btn btn-primary">
+                <i class="fas fa-file-invoice-dollar"></i> Generar Reporte
+            </a>
+        </div>
         <!-- Filtros y Búsqueda -->
         <div class="filters-section">
             <div class="search-box">
@@ -414,9 +450,9 @@ foreach ($pagosPorMes as $pago) {
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn-icon btn-receipt" title="Descargar recibo">
+                                <a href="generar_recibo.php?id_pago=<?php echo htmlspecialchars($item->id_pago); ?>" type="button" class="btn-icon btn-receipt" title="Descargar recibo">
                                     <i class="fas fa-receipt"></i>
-                                </button>
+                                </a>
                             </div>
                         </td>
                     </tr>
@@ -555,15 +591,6 @@ foreach ($pagosPorMes as $pago) {
         if (totalGeneralEl) totalGeneralEl.textContent = `$${totalGeneral.toFixed(2)}`;
         if (totalPagosEl) totalPagosEl.textContent = totalPagosCount;
     }
-
-    // Funciones de botones de acción
-    document.querySelectorAll('.btn-receipt').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const memberName = this.closest('tr').querySelector('.member-details h4').textContent;
-            alert(`Generando recibo para: ${memberName}`);
-            // Aquí iría la lógica para generar el recibo PDF
-        });
-    });
 </script>
 
 <?php include_once 'templates/footer.php'; ?>

@@ -174,6 +174,9 @@ if (!$clase) {
         flex: 1;
         margin-left: 250px;
         transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
     }
 
     /* Header */
@@ -698,15 +701,15 @@ if (!$clase) {
 
     <form id="classForm" action="controladores/editar_clase.php" method="POST">
         <?php if (isset($_SESSION['errores'])) : ?>
-                <div class="alert alert-danger">
-                    <ul>
-                        <?php foreach ($_SESSION['errores'] as $error) : ?>
-                            <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php unset($_SESSION['errores']); ?>
-            <?php endif; ?>
+            <div class="alert alert-danger">
+                <ul>
+                    <?php foreach ($_SESSION['errores'] as $error) : ?>
+                        <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php unset($_SESSION['errores']); ?>
+        <?php endif; ?>
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <input type="hidden" name="id_clase" value="<?php echo htmlspecialchars($clase->id_clase); ?>">
         <div class="form-group">
@@ -741,7 +744,7 @@ if (!$clase) {
                         id="cupo"
                         name="cupo"
                         min="1"
-                        
+
                         required
                         value="<?php echo htmlspecialchars($clase->cupo); ?>"
                         placeholder="20">
@@ -785,9 +788,6 @@ if (!$clase) {
             </button>
         </div>
     </form>
-</div>
-</div>
-</div>
 </div>
 <?php
 require_once "templates/footer.php";

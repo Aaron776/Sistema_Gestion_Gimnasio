@@ -12,6 +12,7 @@ if (!isset($_SESSION['rol'])) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,6 +142,9 @@ if (!isset($_SESSION['rol'])) {
             flex: 1;
             margin-left: 250px;
             transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         /* Header */
@@ -324,11 +328,25 @@ if (!isset($_SESSION['rol'])) {
             color: var(--secondary);
         }
 
-        .bg-primary { background-color: var(--primary); }
-        .bg-success { background-color: var(--success); }
-        .bg-warning { background-color: var(--warning); }
-        .bg-info { background-color: var(--info); }
-        .bg-secondary { background-color: var(--secondary); }
+        .bg-primary {
+            background-color: var(--primary);
+        }
+
+        .bg-success {
+            background-color: var(--success);
+        }
+
+        .bg-warning {
+            background-color: var(--warning);
+        }
+
+        .bg-info {
+            background-color: var(--info);
+        }
+
+        .bg-secondary {
+            background-color: var(--secondary);
+        }
 
         /* Gráficos y Tablas */
         .dashboard-content {
@@ -337,7 +355,9 @@ if (!isset($_SESSION['rol'])) {
             gap: 20px;
         }
 
-        .chart-container, .recent-activity, .quick-actions {
+        .chart-container,
+        .recent-activity,
+        .quick-actions {
             background-color: var(--card);
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -345,7 +365,9 @@ if (!isset($_SESSION['rol'])) {
             margin-bottom: 20px;
         }
 
-        .chart-container h2, .recent-activity h2, .quick-actions h2 {
+        .chart-container h2,
+        .recent-activity h2,
+        .quick-actions h2 {
             font-size: 1.3rem;
             margin-bottom: 15px;
             color: var(--dark);
@@ -463,7 +485,8 @@ if (!isset($_SESSION['rol'])) {
             border-collapse: collapse;
         }
 
-        .table th, .table td {
+        .table th,
+        .table td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #dee2e6;
@@ -503,7 +526,7 @@ if (!isset($_SESSION['rol'])) {
             color: white;
             padding: 20px;
             text-align: center;
-            margin-top: 30px;
+            margin-top: auto;
         }
 
         /* Responsive */
@@ -511,7 +534,7 @@ if (!isset($_SESSION['rol'])) {
             .dashboard-content {
                 grid-template-columns: 1fr;
             }
-            
+
             .actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -521,33 +544,34 @@ if (!isset($_SESSION['rol'])) {
             .sidebar {
                 margin-left: -250px;
             }
-            
+
             .sidebar.active {
                 margin-left: 0;
             }
-            
+
             .main-content {
                 margin-left: 0;
             }
-            
+
             .main-content.active {
                 margin-left: 250px;
             }
-            
+
             .metrics {
                 grid-template-columns: 1fr;
             }
-            
+
             .actions-grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .header-title {
                 display: none;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="wrapper">
         <!-- Sidebar -->
@@ -558,16 +582,27 @@ if (!isset($_SESSION['rol'])) {
             </div>
             <div class="sidebar-menu">
                 <ul>
-                    <?php if($_SESSION['rol'] == 'admin'){?>
+                    <?php if ($_SESSION['rol'] == 'admin') { ?>
                         <li><a href="dash_admin.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                         <li><a href="gestion_usuarios.php"><i class="fas fa-users"></i> Gestion Usuarios</a></li>
                         <li><a href="gestion_membresias.php"><i class="fas fa-dumbbell"></i> Gestion Membresias</a></li>
-                        <li><a href="gestion_clases.php"><i class="fas fa-calendar-alt"> Gestion Clases</a></li>
+                        <li><a href="gestion_clases.php"><i class="fas fa-calendar-alt"></i> Gestion Clases</a></li>
                         <li><a href="gestion_pagos.php"><i class="fas fa-money-bill-wave"></i> Gestion Pagos</a></li>
-                        <li><a href="#"><i class="fas fa-user-shield"></i> Gestion Socios</a></li>
+                        <li><a href="gestion_socios.php"><i class="fas fa-user-shield"></i> Gestion Socios</a></li>
+                        <li><a href="gestion_entrenadores.php"><i class="fas fa-dumbbell"></i> Gestion Entrenadores</a></li>
+                    <?php } elseif ($_SESSION['rol'] == 'socio') { ?>
+                        <li><a href="dash_cliente.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="mis_clases.php"><i class="fas fa-book"></i> Mis Clases</a></li>
+                        <li><a href="asistencia_socio.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
+                    <?php } elseif ($_SESSION['rol'] == 'entrenador') { ?>
+                        <li><a href="dash_entrenador.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="clases_entrenador.php"><i class="fas fa-book"></i> Mis Clases</a></li>
+                        <li><a href="asistencia_entrenador.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
+                        <li><a href="asignacion_rutinas.php"><i class="fas fa-book"></i> Asignacion Rutinas</a></li>
+                        <li><a href="siguimientos_entrenador.php"><i class="fas fa-chart-line"></i> Siguimientos Socios</a></li>
                     <?php } ?>
                     <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
-                    <li><a href="login.html" style="color: var(--secondary);"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+                    <li><a href="controladores/logout.php" style="color: var(--secondary);"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -575,7 +610,4 @@ if (!isset($_SESSION['rol'])) {
         <!-- Contenido Principal -->
         <div class="main-content">
             <!-- Header -->
-            <?php include_once 'sidebar.php';?>
-
-            
-           
+            <?php include('sidebar.php'); ?>

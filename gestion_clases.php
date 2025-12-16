@@ -153,6 +153,9 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
         flex: 1;
         margin-left: 250px;
         transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
     }
 
     /* Header */
@@ -804,7 +807,7 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
                             <div class="action-buttons">
                                 <form action="editar_clase.php" method="POST" style="display: inline-block;">
                                     <input type="hidden" name="id_clase" value="<?= htmlspecialchars($item->id_clase); ?>">
-                                    <button  type="submit" class="btn btn-sm btn-edit">
+                                    <button type="submit" class="btn btn-sm btn-edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                 </form>
@@ -821,52 +824,49 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
             </tbody>
         </table>
     </div>
-</div>
-</div>
-</div>
-</div>
 
-<script>
-    // Inicialización
-    document.addEventListener('DOMContentLoaded', function() {
-        // Toggle sidebar
-        document.querySelector('.toggle-sidebar').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('active');
-            document.querySelector('.main-content').classList.toggle('active');
+    <script>
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar
+            document.querySelector('.toggle-sidebar').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('active');
+                document.querySelector('.main-content').classList.toggle('active');
+            });
+
+            // Filtros y búsqueda
+            document.getElementById('searchInput').addEventListener('input', filtrarClases);
+            document.getElementById('typeFilter').addEventListener('change', filtrarClases);
+            document.getElementById('statusFilter').addEventListener('change', filtrarClases);
+            document.getElementById('instructorFilter').addEventListener('change', filtrarClases);
         });
 
-        // Filtros y búsqueda
-        document.getElementById('searchInput').addEventListener('input', filtrarClases);
-        document.getElementById('typeFilter').addEventListener('change', filtrarClases);
-        document.getElementById('statusFilter').addEventListener('change', filtrarClases);
-        document.getElementById('instructorFilter').addEventListener('change', filtrarClases);
-    });
+        // Filtrar clases
+        function filtrarClases() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const instructorFilter = document.getElementById('instructorFilter').value;
+            const rows = document.querySelectorAll('#classesTable tbody tr');
 
-    // Filtrar clases
-    function filtrarClases() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const typeFilter = document.getElementById('typeFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
-        const instructorFilter = document.getElementById('instructorFilter').value;
-        const rows = document.querySelectorAll('#classesTable tbody tr');
+            rows.forEach(row => {
+                const className = row.cells[0].textContent.toLowerCase();
+                const instructor = row.cells[1].textContent.toLowerCase();
+                // Note: The original code for type and status filter was using cells[5] and cells[6] which
+                // are out of bounds for the current table structure.
+                // Assuming type and status might be inferred from class name or not used in current filtering.
+                // For now, I'll comment them out to avoid errors. If these filters are needed,
+                // the actual columns for type and status need to be identified or added to the table.
+                // const type = row.cells[5].textContent.toLowerCase();
+                // const status = row.cells[6].textContent.toLowerCase();
 
-        rows.forEach(row => {
-            const className = row.cells[0].textContent.toLowerCase();
-            const instructor = row.cells[1].textContent.toLowerCase();
-            // Note: The original code for type and status filter was using cells[5] and cells[6] which
-            // are out of bounds for the current table structure.
-            // Assuming type and status might be inferred from class name or not used in current filtering.
-            // For now, I'll comment them out to avoid errors. If these filters are needed,
-            // the actual columns for type and status need to be identified or added to the table.
-            // const type = row.cells[5].textContent.toLowerCase();
-            // const status = row.cells[6].textContent.toLowerCase();
+                const matchesSearch = className.includes(search) || instructor.includes(search);
+                const matchesType = true; // Placeholder, adjust if type column is found
+                const matchesStatus = true; // Placeholder, adjust if status column is found
+                const matchesInstructor = !instructorFilter || instructor.includes(instructorFilter.toLowerCase());
 
-            const matchesSearch = className.includes(search) || instructor.includes(search);
-            const matchesType = true; // Placeholder, adjust if type column is found
-            const matchesStatus = true; // Placeholder, adjust if status column is found
-            const matchesInstructor = !instructorFilter || instructor.includes(instructorFilter.toLowerCase());
-
-            row.style.display = matchesSearch && matchesType && matchesStatus && matchesInstructor ? '' : 'none';
-        });
-    }
-</script>
+                row.style.display = matchesSearch && matchesType && matchesStatus && matchesInstructor ? '' : 'none';
+            });
+        }
+    </script>
+    <?php require_once "templates/footer.php"; ?>

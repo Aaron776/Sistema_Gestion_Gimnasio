@@ -2,10 +2,6 @@
 session_start();
 require_once '../conexion/bd.php';
 
-// Asegurarse de que el usuario tenga permisos de administrador
-if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
-    die('Acceso no autorizado. Se requieren permisos de administrador.');
-}
 
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['nombre']) && isset($_POST['apellido']) && isset($_POST['email']) && isset($_POST['telefono']) && isset($_POST['password'])){
     $nombre = trim($_POST['nombre']);

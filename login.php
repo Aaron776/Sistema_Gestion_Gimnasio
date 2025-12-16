@@ -473,7 +473,7 @@ session_start();
                             <span class="checkmark"></span>
                             Recordarme
                         </label>
-                        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                        <a href="olvidar_password.php" class="forgot-password">¿Olvidaste tu contraseña?</a>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
