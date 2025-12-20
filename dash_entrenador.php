@@ -8,7 +8,40 @@
     }
     require_once "templates/header.php";
     include_once "conexion/bd.php";
-    ?>
+
+    $id_entrenador = $_SESSION['id_usuario']; // Obtenemos el ID del entrenador
+    
+   
+    // Obtener cantidad de usuarios con rol de socio
+    $sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM usuarios WHERE rol = 'socio'");
+    $sql->execute();
+    $cantidad_socios = $sql->fetchColumn();
+
+    // Obtener cantidad de clases que da este usuario entrenador
+    $sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM clases WHERE id_entrenador = :id");
+    $sql->bindParam(':id', $id_entrenador, PDO::PARAM_INT);
+    $sql->execute();
+    $cantidad_clases = $sql->fetchColumn();
+
+
+    // Consulta para grafico estadistico 
+    $sql = $conexion->prepare("SELECT nombre, cupo FROM clases WHERE id_entrenador = :id");
+    $sql->bindParam(':id', $id_entrenador, PDO::PARAM_INT);
+    $sql->execute();
+    $clases = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+    $sql = $conexion->prepare("
+        SELECT horario, COUNT(*) as total 
+        FROM clases 
+        WHERE id_entrenador = :id
+        GROUP BY horario
+    ");
+    $sql->bindParam(':id', $id_entrenador, PDO::PARAM_INT);
+    $sql->execute();
+    $horarios = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+
+?>
  <style>
      :root {
          --primary: #2c3e50;
@@ -664,20 +697,6 @@
              <div class="welcome-content">
                  <div class="welcome-text">
                      <h1>¡Buenos días, <?php echo htmlspecialchars($_SESSION['nombre']); ?> <?php echo htmlspecialchars($_SESSION['apellido']); ?>!</h1>
-                     <p>Hoy tienes 4 clases programadas y 3 sesiones personalizadas.</p>
-                 </div>
-                 <div class="next-class">
-                     <h3>Próxima Clase</h3>
-                     <div class="class-info">
-                         <div class="class-icon">
-                             <i class="fas fa-dumbbell"></i>
-                         </div>
-                         <div class="class-details">
-                             <h4>Fuerza Funcional</h4>
-                             <p>Sala Principal • 10:45 AM</p>
-                             <p>12/15 alumnos confirmados</p>
-                         </div>
-                     </div>
                  </div>
              </div>
          </div>
@@ -689,11 +708,8 @@
                      <i class="fas fa-users"></i>
                  </div>
                  <div class="metric-info">
-                     <h3>42</h3>
-                     <p>Alumnos Activos</p>
-                     <div class="metric-trend trend-up">
-                         <i class="fas fa-arrow-up"></i> 3 esta semana
-                     </div>
+                     <h3><?php echo htmlspecialchars($cantidad_socios); ?></h3>
+                     <p>Socios Activos</p>
                  </div>
              </div>
              <div class="metric-card">
@@ -701,35 +717,8 @@
                      <i class="fas fa-calendar-check"></i>
                  </div>
                  <div class="metric-info">
-                     <h3>18</h3>
-                     <p>Clases esta Semana</p>
-                     <div class="metric-trend trend-up">
-                         <i class="fas fa-arrow-up"></i> 2 más que la anterior
-                     </div>
-                 </div>
-             </div>
-             <div class="metric-card">
-                 <div class="metric-icon bg-warning">
-                     <i class="fas fa-chart-line"></i>
-                 </div>
-                 <div class="metric-info">
-                     <h3>94%</h3>
-                     <p>Asistencia Promedio</p>
-                     <div class="metric-trend trend-up">
-                         <i class="fas fa-arrow-up"></i> 5% este mes
-                     </div>
-                 </div>
-             </div>
-             <div class="metric-card">
-                 <div class="metric-icon bg-info">
-                     <i class="fas fa-star"></i>
-                 </div>
-                 <div class="metric-info">
-                     <h3>4.7</h3>
-                     <p>Calificación Promedio</p>
-                     <div class="metric-trend trend-up">
-                         <i class="fas fa-arrow-up"></i> 0.2 este mes
-                     </div>
+                     <h3><?php echo htmlspecialchars($cantidad_clases); ?></h3>
+                     <p>Clases Impartidas</p>
                  </div>
              </div>
          </div>
@@ -737,13 +726,13 @@
          <!-- Contenido Principal del Dashboard -->
          <div class="dashboard-content">
              <div>
-                 <!-- Gráfico de Asistencia -->
                  <div class="chart-container">
-                     <h2>Asistencia Mensual</h2>
-                     <div class="chart-wrapper">
-                         <canvas id="attendanceChart"></canvas>
-                     </div>
-                 </div>
+                    <h2>Cupo por Clase</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="cupoClasesChart"></canvas>
+                    </div>
+                </div>
+
 
                  <!-- Acciones Rápidas -->
                  <div class="quick-actions">
@@ -770,52 +759,13 @@
              </div>
 
              <div>
-                 <!-- Horario de Hoy -->
                  <div class="today-schedule">
-                     <h2>Horario de Hoy</h2>
-                     <ul class="schedule-list">
-                         <li class="schedule-item">
-                             <div class="schedule-time">09:00</div>
-                             <div class="schedule-info">
-                                 <h4>Yoga Matutino</h4>
-                                 <p>Sala A • 15 alumnos</p>
-                             </div>
-                             <span class="schedule-status status-completed">Finalizada</span>
-                         </li>
-                         <li class="schedule-item">
-                             <div class="schedule-time">10:45</div>
-                             <div class="schedule-info">
-                                 <h4>Fuerza Funcional</h4>
-                                 <p>Sala Principal • 12 alumnos</p>
-                             </div>
-                             <span class="schedule-status status-in-progress">En curso</span>
-                         </li>
-                         <li class="schedule-item">
-                             <div class="schedule-time">14:00</div>
-                             <div class="schedule-info">
-                                 <h4>Entrenamiento Personal</h4>
-                                 <p>Juan Pérez • 60 min</p>
-                             </div>
-                             <span class="schedule-status status-upcoming">Próxima</span>
-                         </li>
-                         <li class="schedule-item">
-                             <div class="schedule-time">16:30</div>
-                             <div class="schedule-info">
-                                 <h4>HIIT Cardio</h4>
-                                 <p>Sala B • 20 alumnos</p>
-                             </div>
-                             <span class="schedule-status status-upcoming">Próxima</span>
-                         </li>
-                         <li class="schedule-item">
-                             <div class="schedule-time">18:00</div>
-                             <div class="schedule-info">
-                                 <h4>Evaluación Física</h4>
-                                 <p>María González • 45 min</p>
-                             </div>
-                             <span class="schedule-status status-upcoming">Próxima</span>
-                         </li>
-                     </ul>
-                 </div>
+                    <h2>Distribución de Clases por Horario</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="horarioChart"></canvas>
+                    </div>
+                </div>
+
 
                  <!-- Alumnos Recientes -->
                  <div class="recent-members">
@@ -976,4 +926,73 @@
          });
      }, 30000); // Cada 30 segundos
  </script>
+
+ <script>
+const clasesData = <?php echo json_encode($clases); ?>;
+
+const nombres = clasesData.map(c => c.nombre);
+const cupos = clasesData.map(c => c.cupo);
+
+const ctxCupo = document.getElementById('cupoClasesChart').getContext('2d');
+new Chart(ctxCupo, {
+    type: 'bar',
+    data: {
+        labels: nombres,
+        datasets: [{
+            label: 'Cupo máximo',
+            data: cupos,
+            backgroundColor: 'rgba(52, 152, 219, 0.8)',
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => v + ' personas'
+                }
+            }
+        }
+    }
+});
+</script>
+
+<script>
+const horariosData = <?php echo json_encode($horarios); ?>;
+
+const labelsHorario = horariosData.map(h => h.horario);
+const totalHorario = horariosData.map(h => h.total);
+
+const ctxHorario = document.getElementById('horarioChart').getContext('2d');
+new Chart(ctxHorario, {
+    type: 'doughnut',
+    data: {
+        labels: labelsHorario,
+        datasets: [{
+            data: totalHorario,
+            backgroundColor: [
+                '#1abc9c',
+                '#f39c12',
+                '#e74c3c',
+                '#3498db'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+
+
  <?php require_once('templates/footer.php'); ?>

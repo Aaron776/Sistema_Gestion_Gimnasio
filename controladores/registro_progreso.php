@@ -70,7 +70,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_socio']) && isset($_
     }
 
     if(empty($errores)){
-        $sql=$conexion->prepare("INSERT INTO progreso (id_socio, peso, grasa_corporal, masa_muscular, fecha_registro) VALUES (:id_socio, :fecha_registro, :peso, :grasa_corporal, :masa_muscular)");
+        $sql=$conexion->prepare("INSERT INTO progreso (id_socio, peso, grasa_corporal, masa_muscular, fecha_registro) VALUES (:id_socio,:peso,:grasa_corporal,:masa_muscular,:fecha_registro)");
         $sql->bindParam(':id_socio', $id_socio, PDO::PARAM_STR);
         $sql->bindParam(':fecha_registro', $fecha_registro, PDO::PARAM_STR);
         $sql->bindParam(':peso', $peso, PDO::PARAM_STR);

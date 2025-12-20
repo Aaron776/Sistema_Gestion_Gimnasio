@@ -592,6 +592,7 @@ if (!isset($_SESSION['rol'])) {
                         <li><a href="gestion_entrenadores.php"><i class="fas fa-dumbbell"></i> Gestion Entrenadores</a></li>
                     <?php } elseif ($_SESSION['rol'] == 'socio') { ?>
                         <li><a href="dash_cliente.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="membresia_socio.php"><i class="fas fa-dumbbell"></i> Mi Membresia</a></li>
                         <li><a href="mis_clases.php"><i class="fas fa-book"></i> Mis Clases</a></li>
                         <li><a href="asistencia_socio.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
                     <?php } elseif ($_SESSION['rol'] == 'entrenador') { ?>

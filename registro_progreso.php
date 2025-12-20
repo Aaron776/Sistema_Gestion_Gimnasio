@@ -15,9 +15,9 @@ require_once "templates/header.php";
 include_once "conexion/bd.php";
 
 // Obtener listado de usuarios con rol de socio
-$sql=$conexion->prepare("SELECT id as id_usuario, CONCAT(nombre, ' ', apellido) as nombre_usuario FROM usuarios WHERE rol='socio'");
+$sql = $conexion->prepare("SELECT id as id_usuario, CONCAT(nombre, ' ', apellido) as nombre_usuario FROM usuarios WHERE rol='socio'");
 $sql->execute();
-$socios=$sql->fetchAll(PDO::FETCH_OBJ);
+$socios = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
 <style>
     :root {
@@ -749,6 +749,24 @@ $socios=$sql->fetchAll(PDO::FETCH_OBJ);
     <h2><i class="fas fa-user-plus"></i> Seleccionar Socio</h2>
 
     <form id="progreso-form" method="POST" action="controladores/registro_progreso.php">
+        <?php if (isset($_SESSION['errores'])) : ?>
+            <div class="alert alert-danger">
+                <ul>
+                    <?php foreach ($_SESSION['errores'] as $error) : ?>
+                        <li><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            <?php unset($_SESSION['errores']); ?>
+        <?php endif; ?>
+
+        <?php if (isset($_SESSION['exito'])) : ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> <?= $_SESSION['exito']; ?>
+            </div>
+            <?php unset($_SESSION['exito']); ?>
+        <?php endif; ?>
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <div class="form-row">
             <div class="form-group full-width">
                 <label for="socio_id">Socio <span class="required">*</span></label>
@@ -776,7 +794,7 @@ $socios=$sql->fetchAll(PDO::FETCH_OBJ);
             <div class="form-group">
                 <label for="peso">Peso <span class="required">*</span></label>
                 <div class="input-with-unit">
-                    <input type="number" class="form-control" id="peso" name="peso" step="0.1" min="30" max="200" placeholder="Ej: 75.5" required>
+                    <input type="number" class="form-control" id="peso" name="peso" step="0.1"  placeholder="Ej: 75.5" required>
                     <span class="unit">kg</span>
                 </div>
                 <p class="label-info">Peso corporal en kilogramos</p>
@@ -796,7 +814,7 @@ $socios=$sql->fetchAll(PDO::FETCH_OBJ);
             <div class="form-group">
                 <label for="masa_muscular">Masa Muscular <span class="required">*</span></label>
                 <div class="input-with-unit">
-                    <input type="number" class="form-control" id="masa_muscular" name="masa_muscular" step="0.1" min="20" max="80" placeholder="Ej: 32.5" required>
+                    <input type="number" class="form-control" id="masa_muscular" name="masa_muscular" step="0.1" placeholder="Ej: 32.5" required>
                     <span class="unit">kg</span>
                 </div>
                 <p class="label-info">Masa muscular en kilogramos</p>

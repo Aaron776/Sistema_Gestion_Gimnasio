@@ -2,10 +2,10 @@
 session_start();
 require_once '../conexion/bd.php';
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_POST['password'])){
+if ($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_POST['password'])) {
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
-    $errores=[];
+    $errores = [];
 
     // Inicializar contador de intentos si no existe
     if (!isset($_SESSION['intentos'])) {
@@ -13,37 +13,50 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_PO
     }
 
     // VALIDACIONES Y SANITIZACIONES
-    if(empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)){
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errores['email'] = 'El email no es valido';
     }
 
-    if(empty($password)){
+    if (empty($password)) {
         $errores['password'] = 'La contraseña es obligatoria';
     }
 
+    // Validar intentos fallidos
     if ($_SESSION['intentos'] >= 5) {
-        $_SESSION['errores'] = ["Demasiados intentos fallidos. Intenta nuevamente más tarde."];
-        header("Location: ../login.php");
-        exit();
+        if (!isset($_SESSION['bloqueado_tiempo'])) {
+            $_SESSION['bloqueado_tiempo'] = time();
+        }
+        $tiempo_transcurrido = time() - $_SESSION['bloqueado_tiempo'];
+        $tiempo_espera = 60;
+
+        if ($tiempo_transcurrido < $tiempo_espera) {
+            $restante = $tiempo_espera - $tiempo_transcurrido;
+            $_SESSION['errores'] = ["Demasiados intentos. Intenta en $restante segundos."];
+            header("Location: ../login.php");
+            exit();
+        } else {
+            $_SESSION['intentos'] = 0;
+            unset($_SESSION['bloqueado_tiempo']);
+        }
     }
 
     // Si no existe errores procede a ingresar al sistema
-    if(empty($errores)){
+    if (empty($errores)) {
         // Obtener el usuario de la base de datos
-        $sql=$conexion->prepare("SELECT id,nombre,apellido,email,rol,password FROM usuarios WHERE email=:email LIMIT 1");
+        $sql = $conexion->prepare("SELECT id,nombre,apellido,email,rol,password FROM usuarios WHERE email=:email LIMIT 1");
         $sql->bindParam(':email', $email, PDO::PARAM_STR);
         $sql->execute();
         $usuario = $sql->fetch(PDO::FETCH_OBJ);
 
-        if($usuario==true && password_verify($password, $usuario->password)){
+        if ($usuario == true && password_verify($password, $usuario->password)) {
             $_SESSION['id_usuario'] = $usuario->id;
             $_SESSION['nombre'] = $usuario->nombre;
             $_SESSION['apellido'] = $usuario->apellido;
             $_SESSION['email'] = $usuario->email;
             $_SESSION['rol'] = $usuario->rol;
-            $_SESSION['logueado']=true;
+            $_SESSION['logueado'] = true;
 
-              // Reinicia el contador de intentos fallidos
+            // Reinicia el contador de intentos fallidos
             $_SESSION['intentos'] = 0;
 
             switch ($usuario->rol) {
@@ -63,21 +76,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_PO
         } else {
             // Credenciales incorrectas
             $_SESSION['intentos']++;
-            $errores[] = "Email o contraseña incorrectos.";
+            if ($_SESSION['intentos'] >= 5) {
+                $_SESSION['bloqueado_tiempo'] = time();
+                $errores[] = "Demasiados intentos fallidos. Intenta nuevamente en 1 minuto.";
+            } else {
+                $errores[] = "Email o contraseña incorrectos.";
+            }
             $_SESSION['errores'] = $errores;
             header("Location: ../login.php");
             exit();
         }
-    }else{
+    } else {
         $_SESSION['errores'] = $errores;
         header('Location: ../login.php');
         exit;
     }
-}else{
+} else {
     $_SESSION['errores'] = ['Error al enviar el formulario'];
     header('Location: ../login.php');
     exit;
 }
-
-
-?>

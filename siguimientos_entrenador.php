@@ -10,9 +10,14 @@ require_once "templates/header.php";
 include_once "conexion/bd.php";
 
 // Obtener todos los usuarios con rol de socio
-$sql = $conexion->prepare("SELECT usuarios.id as id_usuario, usuarios.email as email_socio, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ");
+$sql = $conexion->prepare("SELECT usuarios.id as id_socio, usuarios.email as email_socio, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ");
 $sql->execute();
 $socios = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// Obtener cantidad de usuarios con rol de socio
+$sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM usuarios WHERE rol = 'socio'");
+$sql->execute();
+$cantidad_socios = $sql->fetchColumn();
 ?>
 <style>
     :root {
@@ -775,7 +780,7 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
             <i class="fas fa-users"></i>
         </div>
         <div class="counter-info">
-            <h3 id="total-socios">0</h3>
+            <h3 id="total-socios"><?php echo htmlspecialchars($cantidad_socios); ?></h3>
             <p>Total de Socios</p>
         </div>
     </div>
@@ -784,26 +789,8 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
             <i class="fas fa-user-check"></i>
         </div>
         <div class="counter-info">
-            <h3 id="active-socios">0</h3>
+            <h3 id="active-socios"><?php echo htmlspecialchars($cantidad_socios); ?></h3>
             <p>Socios Activos</p>
-        </div>
-    </div>
-    <div class="counter-card warning">
-        <div class="counter-icon warning">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="counter-info">
-            <h3 id="pending-socios">0</h3>
-            <p>Socios Pendientes</p>
-        </div>
-    </div>
-    <div class="counter-card info">
-        <div class="counter-icon info">
-            <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="counter-info">
-            <h3 id="progress-count">0</h3>
-            <p>Progresos esta semana</p>
         </div>
     </div>
 </div>
@@ -831,12 +818,12 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
             <tbody id="socios-body">
                 <?php foreach ($socios as $item) { ?>
                 <tr>
-                    <td>SOC-<?php echo htmlspecialchars($item->id_usuario); ?></td>
+                    <td>SOC-<?php echo htmlspecialchars($item->id_socio); ?></td>
                     <td><?php echo htmlspecialchars($item->nombre_socio); ?></td>
                     <td><?php echo htmlspecialchars($item->email_socio); ?></td>
                     <td><?php echo htmlspecialchars($item->nombre_membresia); ?></td>
                     <td>
-                        <a href="#" class="action-btn btn-view btn-sm">
+                        <a href="seguimiento_progreso_socio.php?id_socio=<?php echo htmlspecialchars($item->id_socio); ?>" class="action-btn btn-view btn-sm">
                             <i class="fas fa-eye"></i> Ver Progresos
                         </a>
                     </td>
