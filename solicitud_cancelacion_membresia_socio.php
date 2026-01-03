@@ -21,7 +21,7 @@
         exit();
     }
 
-    // Obtener la mebresia de este usuario socio
+    // Obtener la membresia de este usuario socio
     $sql = $conexion->prepare("SELECT id as id_membresia_usuario FROM membresia_usuario WHERE id_usuario = :id_usuario");
     $sql->bindparam(":id_usuario", $id_socio);
     $sql->execute();

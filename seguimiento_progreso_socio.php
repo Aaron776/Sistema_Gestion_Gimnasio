@@ -657,6 +657,7 @@ foreach ($seguimientos as $item) {
     </div>
 
     <!-- Estadísticas rápidas -->
+    <?php if($peso && $grasa_corporal && $masa_muscular): ?>
     <div class="quick-stats">
         <div class="stat-card weight">
             <div class="stat-icon weight">
@@ -786,6 +787,43 @@ foreach ($seguimientos as $item) {
             </div>
         </div>
     </div>
+    <?php else: ?>
+        <div class="quick-stats">
+            <div class="stat-card weight">
+                <div class="stat-icon weight">
+                    <i class="fas fa-weight"></i>
+                </div>
+                <div class="stat-value weight-value">No hay datos</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-down trend-down"></i>
+                    <span class="trend-down">No hay datos</span>
+                </div>
+                <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: No hay datos</p>
+            </div>
+            <div class="stat-card fat">
+                <div class="stat-icon fat">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-value fat-value">No hay datos</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-down trend-down"></i>
+                    <span class="trend-down">No hay datos</span>
+                </div>
+                <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: No hay datos</p>
+            </div>
+            <div class="stat-card muscle">
+                <div class="stat-icon muscle">
+                    <i class="fas fa-dumbbell"></i>
+                </div>
+                <div class="stat-value muscle-value">No hay datos</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-down trend-down"></i>
+                    <span class="trend-down">No hay datos</span>
+                </div>
+                <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: No hay datos</p>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Gráficos -->
     <div class="charts-container">

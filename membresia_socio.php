@@ -17,8 +17,12 @@ $sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
 $sql->execute();
 $membresia = $sql->fetch(PDO::FETCH_OBJ);
 
-// Fecha inicio de la mebreia del este socio
-$fecha_inicio_membresia = $membresia->fecha_inicio;
+// Fecha inicio de la membresía del este socio
+if($membresia){
+    $fecha_inicio_membresia = $membresia->fecha_inicio;
+}else{
+    $fecha_inicio_membresia = null;
+}
 
 // Calcular horas transcurridas desde el inicio de la membresía
 $inicio = new DateTime($fecha_inicio_membresia);
@@ -664,7 +668,7 @@ $mostrar_cancelar = $horas_transcurridas <= 48;
                 </div>
                 <div class="message-content">
                     <h1>¡Ya tienes una membresía activa!</h1>
-                    <p>Actualmente cuentas con una membresía Premium. Disfruta de todos los beneficios que ofrece nuestro gimnasio.</p>
+                    <p>Actualmente cuentas con una membresía. Disfruta de todos los beneficios que ofrece nuestro gimnasio.</p>
 
                     <div class="current-membership">
                         <div class="current-membership-header">
@@ -674,15 +678,15 @@ $mostrar_cancelar = $horas_transcurridas <= 48;
                         <div class="membership-details">
                             <div class="detail-item">
                                 <span class="detail-label">Tipo de Membresía</span>
-                                <span class="detail-value">Premium</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($membresia->nombre_membresia); ?></span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Fecha de Inicio</span>
-                                <span class="detail-value">15/01/2024</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($membresia->fecha_inicio); ?></span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Fecha de Vencimiento</span>
-                                <span class="detail-value">15/04/2024</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($membresia->fecha_fin); ?></span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Estado</span>
@@ -721,34 +725,13 @@ $mostrar_cancelar = $horas_transcurridas <= 48;
                     <h1>¡Únete a PowerFit Gym!</h1>
                     <p>Adquiere una membresía para acceder a todas nuestras instalaciones, clases y beneficios exclusivos.</p>
 
-                    <button class="primary-btn" id="acquire-btn">
+                    <a href="adquirir_membresia_socio.php" type="button" class="primary-btn" id="acquire-btn">
                         <i class="fas fa-credit-card"></i> Adquirir Membresía
-                    </button>
+                    </a>
 
                     <p style="font-size: 0.9rem; color: #6c757d; margin-top: 20px;">
                         <i class="fas fa-info-circle"></i> Puedes seleccionar entre diferentes planes según tus necesidades.
                     </p>
-                </div>
-            </div>
-
-            <!-- Planes disponibles (se muestra al hacer clic en el botón) -->
-            <div class="plans-container" id="plans-section" style="display: none;">
-                <div class="plans-header">
-                    <h2>Selecciona tu Plan</h2>
-                    <p>Elige la membresía que mejor se adapte a tus objetivos de fitness y presupuesto.</p>
-                </div>
-
-                <div class="plans-grid" style="display: flex; justify-content: center;">
-                    <div class="plan-card" style="width: 100%; max-width: 500px; text-align: center;">
-                        <div class="plan-header">
-                            <h3 class="plan-name">Comienza Hoy</h3>
-                            <p style="color: #6c757d; margin-top: 10px;">Da el primer paso hacia tu mejor versión</p>
-                        </div>
-
-                        <button class="primary-btn" onclick="window.location.href='#'" style="width: 100%;">
-                            Inscribirse al gimnasio
-                        </button>
-                    </div>
                 </div>
             </div>
         <?php } ?>

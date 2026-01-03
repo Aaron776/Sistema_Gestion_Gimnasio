@@ -34,363 +34,92 @@ if (!$pago) {
 }
 ?>
 <style>
+/* --- BLOQUE DE ESTILOS NUEVO Y AISLADO PARA LA PÁGINA DE RECIBO --- */
+:root {
+    --r-bg: #f7fafc;
+    --r-ink: #111827;
+    --r-muted: #6b7280;
+    --r-accent: #ef4444;
+    --r-success: #10b981;
+    --r-white: #ffffff;
+    --r-radius: 12px;
+    --r-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
 
-    .receipt-container {
-        max-width: 500px;
-        width: 100%;
-    }
+/* Wrapper de la página (aislado) */
+#receiptPage { padding: 26px 12px; background: transparent; font-family: var(--r-font); color: var(--r-ink); }
+#receiptPage .page-inner { max-width: 780px; margin: 0 auto; }
+#receiptPage .receipt-container { width: 100%; margin: 18px auto; box-sizing: border-box; }
 
-    .receipt-actions {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
+/* Acciones (botones) */
+#receiptPage .receipt-actions { display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+#receiptPage .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer; border:none; background:transparent; color:var(--r-ink); }
+#receiptPage .btn-primary { background:var(--r-accent); color:white; box-shadow:0 6px 18px rgba(239,68,68,0.12); }
+#receiptPage .btn-print { background:var(--r-success); color:white; }
+#receiptPage .btn-secondary { background:#64748b; color:white; }
 
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-family: var(--font-main);
-        font-size: 0.95rem;
-    }
+/* Tarjeta de recibo */
+#receiptPage .receipt { background:var(--r-white); border-radius:var(--r-radius); padding:22px; box-shadow:0 10px 30px rgba(15,23,42,0.06); overflow:hidden; }
+#receiptPage .receipt::before { content:''; display:block; height:6px; width:100%; background:linear-gradient(90deg,var(--r-accent),#f97316); margin:0 0 12px 0; border-radius:6px; }
 
-    .btn-primary {
-        background-color: var(--secondary);
-        color: white;
-        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
-    }
+#receiptPage .receipt-header { text-align:center; margin-bottom:12px; }
+#receiptPage .gym-logo { display:flex; gap:10px; align-items:center; justify-content:center; }
+#receiptPage .gym-logo i { font-size:1.6rem; color:var(--r-accent); }
+#receiptPage .gym-name { font-size:1.2rem; font-weight:800; letter-spacing:-0.2px; }
+#receiptPage .receipt-title { font-weight:700; font-size:1.05rem; margin-top:6px; }
+#receiptPage .receipt-subtitle { color:var(--r-muted); font-size:0.9rem; }
 
-    .btn-primary:hover {
-        background-color: #c0392b;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
-    }
+/* Info grid */
+#receiptPage .receipt-info { display:grid; grid-template-columns:1fr; gap:10px; margin:12px 0; }
+@media (min-width:640px){ #receiptPage .receipt-info{ grid-template-columns:1fr 1fr; } }
+#receiptPage .info-label{ font-size:0.72rem; color:var(--r-muted); font-weight:800; text-transform:uppercase; }
+#receiptPage .info-value{ font-weight:800; color:var(--r-ink); }
 
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
+/* Member */
+#receiptPage .member-info{ display:flex; gap:12px; align-items:center; padding:12px; background:linear-gradient(180deg,#fbfbfb,#f1f5f9); border-radius:8px; }
+#receiptPage .member-avatar{ width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--r-accent),#f97316);color:white;font-weight:800; }
+#receiptPage .member-details h3{ margin:0; font-size:1rem; }
+#receiptPage .member-details p{ margin:0; color:var(--r-muted); font-size:0.9rem; }
 
-    .btn-secondary:hover {
-        background-color: #5a6268;
-    }
+/* Detalles de pago */
+#receiptPage .payment-details{ padding:12px; background:#fbfbfb; border-radius:8px; margin-top:12px; }
+#receiptPage .detail-row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f1f1; }
+#receiptPage .detail-row:last-child{ border-bottom:none; }
+#receiptPage .detail-label{ font-weight:700; color:var(--r-muted); }
+#receiptPage .detail-value{ font-weight:800; }
+#receiptPage .amount{ color:var(--r-success); font-size:1.05rem; font-weight:900; }
+#receiptPage .membership-type{ background:var(--r-ink); color:white; padding:6px 12px; border-radius:16px; font-weight:800; font-size:0.8rem; }
 
-    .btn-print {
-        background-color: var(--success);
-        color: white;
-        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
-    }
+/* QR y Footer */
+#receiptPage .qr-code{ text-align:center; margin-top:12px; }
+#receiptPage .receipt-footer{ text-align:center; margin-top:14px; padding-top:12px; border-top:1px dashed #f1f1f1; color:var(--r-muted); }
 
-    .btn-print:hover {
-        background-color: #27ae60;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
-    }
+/* Optimización para impresión */
+@media print{
+    #receiptPage .receipt { box-shadow:none; padding:0; border:none; }
+    #receiptPage .receipt-actions, #receiptPage .btn { display:none !important; }
+    body{ background:white !important; }
+}
 
-    /* Recibo */
-    .receipt {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-        padding: 30px;
-        position: relative;
-        overflow: hidden;
-    }
+/* Móvil */
+@media (max-width:480px){
+    #receiptPage .receipt{ padding:14px; }
+    #receiptPage .member-info{ flex-direction:column; text-align:center; }
+}
 
-    .receipt::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--secondary), var(--primary));
-    }
-
-    .receipt-header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px dashed #e9ecef;
-    }
-
-    .gym-logo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-
-    .gym-logo i {
-        font-size: 2.5rem;
-        color: var(--secondary);
-    }
-
-    .gym-name {
-        font-family: var(--font-main);
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: var(--primary);
-    }
-
-    .gym-name span {
-        color: var(--secondary);
-    }
-
-    .receipt-title {
-        font-family: var(--font-main);
-        font-size: 1.4rem;
-        color: var(--dark);
-        margin-bottom: 5px;
-    }
-
-    .receipt-subtitle {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    /* Información del Recibo */
-    .receipt-info {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 25px;
-    }
-
-    .info-group {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
-
-    .info-label {
-        font-size: 0.8rem;
-        color: #6c757d;
-        text-transform: uppercase;
-        font-weight: 600;
-    }
-
-    .info-value {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--dark);
-        font-family: var(--font-main);
-    }
-
-    /* Detalles del Pago */
-    .payment-details {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 25px;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 0;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-
-    .detail-label {
-        color: #6c757d;
-        font-weight: 500;
-    }
-
-    .detail-value {
-        font-weight: 600;
-        color: var(--dark);
-        font-family: var(--font-main);
-    }
-
-    .amount {
-        font-size: 1.3rem;
-        color: var(--success);
-    }
-
-    .membership-type {
-        background: var(--primary);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .payment-method {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .payment-icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: var(--info);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-    }
-
-    /* Información del Socio */
-    .member-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
-        padding: 20px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 10px;
-    }
-
-    .member-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: bold;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .member-details h3 {
-        font-family: var(--font-main);
-        font-size: 1.3rem;
-        color: var(--dark);
-        margin-bottom: 5px;
-    }
-
-    .member-details p {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    /* Footer del Recibo */
-    .receipt-footer {
-        text-align: center;
-        padding-top: 20px;
-        border-top: 2px dashed #e9ecef;
-    }
-
-    .thank-you {
-        font-family: var(--font-main);
-        font-size: 1.1rem;
-        color: var(--primary);
-        margin-bottom: 10px;
-    }
-
-    .contact-info {
-        color: #6c757d;
-        font-size: 0.85rem;
-        line-height: 1.4;
-    }
-
-    /* Código QR */
-    .qr-code {
-        text-align: center;
-        margin: 20px 0;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 10px;
-    }
-
-    .qr-placeholder {
-        width: 120px;
-        height: 120px;
-        background: linear-gradient(45deg, #e9ecef, #dee2e6);
-        margin: 0 auto 10px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #6c757d;
-        font-size: 0.8rem;
-    }
-
-    .qr-text {
-        font-size: 0.8rem;
-        color: #6c757d;
-    }
-
-    /* Estilos para impresión */
-    @media print {
-        body {
-            background: white !important;
-            padding: 0;
-        }
-
-        .receipt-actions {
-            display: none;
-        }
-
-        .receipt {
-            box-shadow: none;
-            border: 2px solid #dee2e6;
-        }
-
-        .btn {
-            display: none;
-        }
-    }
-
-    /* Responsive */
-    @media (max-width: 480px) {
-        .receipt {
-            padding: 20px;
-        }
-
-        .receipt-info {
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-
-        .member-info {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .receipt-actions {
-            flex-direction: column;
-        }
-
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-    }
 </style>
 
-    <div class="receipt-container">
+    <div id="receiptPage" class="page-inner">
+        <div class="receipt-container">
         <!-- Botones de Acción -->
         <div class="receipt-actions">
             <button class="btn btn-secondary" onclick="volver()">
                 <i class="fas fa-arrow-left"></i> Volver
             </button>
-            <button class="btn btn-print">
+            <button class="btn btn-print" onclick="window.print()">
                 <i class="fas fa-print"></i> Imprimir Recibo
             </button>
-            <a href="facturasPDF/recibo.php?id_pago=<?php echo htmlspecialchars($pago->id_pago); ?>" type="button" class="btn btn-primary">
+            <a href="facturasPDF/recibo.php?id_pago=<?php echo htmlspecialchars($pago->id_pago); ?>" type="button" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
                 <i class="fas fa-download"></i> Descargar PDF
             </a>
         </div>
@@ -478,6 +207,7 @@ if (!$pago) {
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script>

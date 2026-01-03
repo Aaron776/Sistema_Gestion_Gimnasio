@@ -15,261 +15,18 @@ if (empty($_SESSION['csrf_token'])) {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
-// Obtener la lista de socios desde la base de datos
-$sql = $conexion->prepare("SELECT usuarios.id as id_socio,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,usuarios.email as email,usuarios.telefono as telefono,membresias.nombre as membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id  WHERE usuarios.rol='socio'");
+// Obtener la lista de socios desde la base de datos (incluye socios sin membresía)
+$sql = $conexion->prepare("SELECT usuarios.id as id_socio,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,usuarios.email as email,usuarios.telefono as telefono,membresias.nombre as membresia FROM usuarios LEFT JOIN membresia_usuario ON membresia_usuario.id_usuario = usuarios.id LEFT JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol='socio'");
 $sql->execute();
 $socios = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
 <style>
-    :root {
-        --primary: #2c3e50;
-        --secondary: #e74c3c;
-        --accent: #3498db;
-        --light: #ecf0f1;
-        --dark: #2c3e50;
-        --success: #2ecc71;
-        --warning: #f39c12;
-        --info: #17a2b8;
-        --sidebar: #1a252f;
-        --sidebar-hover: #2c3e50;
-        --header: #2c3e50;
-        --content: #ecf0f1;
-        --card: #ffffff;
-        --font-main: 'Montserrat', sans-serif;
-        --font-secondary: 'Open Sans', sans-serif;
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: var(--font-secondary);
-        background-color: var(--content);
-        overflow-x: hidden;
-    }
-
-    .alert {
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        border-radius: 3px;
-        font-size: 14px;
-    }
-
-    .alert-danger {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-
-    .alert-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    /* Layout Principal */
-    .wrapper {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    /* Sidebar */
-    .sidebar {
-        width: 250px;
-        background-color: var(--sidebar);
-        color: white;
-        transition: all 0.3s;
-        position: fixed;
-        height: 100vh;
-        z-index: 1000;
-        box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar-header {
-        padding: 20px;
-        background-color: rgba(0, 0, 0, 0.2);
-        text-align: center;
-        border-bottom: 1px solid #2c3e50;
-    }
-
-    .sidebar-header h3 {
-        color: white;
-        margin: 0;
-        font-size: 1.5rem;
-        font-family: var(--font-main);
-    }
-
-    .sidebar-header h3 span {
-        color: var(--secondary);
-    }
-
-    .sidebar-menu {
-        padding: 10px 0;
-    }
-
-    .sidebar-menu ul {
-        list-style: none;
-    }
-
-    .sidebar-menu li {
-        position: relative;
-    }
-
-    .sidebar-menu a {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        color: #c2c7d0;
-        text-decoration: none;
-        transition: all 0.3s;
-        font-size: 0.95rem;
-    }
-
-    .sidebar-menu a:hover {
-        color: white;
-        background-color: var(--sidebar-hover);
-    }
-
-    .sidebar-menu a.active {
-        color: white;
-        background-color: var(--secondary);
-        border-left: 4px solid var(--secondary);
-    }
-
-    .sidebar-menu i {
-        margin-right: 10px;
-        width: 20px;
-        text-align: center;
-        font-size: 1.1rem;
-    }
-
-    /* Contenido Principal */
-    .main-content {
-        flex: 1;
-        margin-left: 250px;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    /* Header */
-    .header {
-        background-color: var(--header);
-        padding: 15px 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: white;
-    }
-
-    .toggle-sidebar {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: white;
-        cursor: pointer;
-        margin-right: 15px;
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-    }
-
-    .header-title {
-        font-family: var(--font-main);
-        font-size: 1.5rem;
-    }
-
-    .user-menu {
-        display: flex;
-        align-items: center;
-    }
-
-    .user-info {
-        margin-right: 15px;
-        text-align: right;
-    }
-
-    .user-name {
-        font-weight: 600;
-        color: white;
-        font-family: var(--font-main);
-    }
-
-    .user-role {
-        font-size: 0.8rem;
-        color: #c2c7d0;
-    }
-
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--secondary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-family: var(--font-main);
-    }
-
-    .notification-bell {
-        position: relative;
-        margin-right: 20px;
-        font-size: 1.2rem;
-        color: white;
-        cursor: pointer;
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: var(--secondary);
-        color: white;
-        border-radius: 50%;
-        width: 18px;
-        height: 18px;
-        font-size: 0.7rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Contenido */
-    .content {
-        padding: 20px;
-    }
-
     .members-container {
         background-color: var(--card);
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         padding: 25px;
         margin-bottom: 20px;
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .page-header h1 {
-        font-size: 1.8rem;
-        color: var(--dark);
-        margin-bottom: 0;
-        font-family: var(--font-main);
     }
 
     .btn {
@@ -444,6 +201,12 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
         background: linear-gradient(135deg, #fd7e14, #fd9843);
         color: white;
     }
+
+    .membership-none {
+        background: linear-gradient(135deg, #6c757d, #868e96);
+        color: white;
+    }
+
 
     /* Información del Socio */
     .member-info {
@@ -640,22 +403,6 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
 
     /* Responsive */
     @media (max-width: 768px) {
-        .sidebar {
-            margin-left: -250px;
-        }
-
-        .sidebar.active {
-            margin-left: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
-        .main-content.active {
-            margin-left: 250px;
-        }
-
         .members-container {
             padding: 20px;
         }
@@ -722,6 +469,7 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
             <option value="anual">Anual</option>
             <option value="mensual">Mensual</option>
             <option value="trimestral">Trimestral</option>
+            <option value="none">Sin Membresía</option>
         </select>
         <select class="filter-select" id="statusFilter">
             <option value="">Todos los estados</option>
@@ -784,15 +532,16 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
                                 <span class="membership-badge membership-trimestral">Trimestral</span>
                             <?php } elseif ($item->membresia == 'Premium') { ?>
                                 <span class="membership-badge membership-premium">Premium</span>
+                            <?php } else { ?>
+                                <span class="membership-badge membership-none">Sin Membresía</span>
                             <?php } ?>
                         </td>
                         <td>
-                            <form method="post" action="gestion_asistencias_socio.php">
-                                <input type="hidden" name="id_socio" value="<?php echo htmlspecialchars($item->id_socio); ?>">
-                                <button class="btn btn-info btn-sm">
+                            <?php if (!is_null($item->membresia)) { ?>
+                                <a href="gestion_asistencias_socio.php?id_socio=<?php echo htmlspecialchars($item->id_socio); ?>" class="btn btn-info btn-sm">
                                     <i class="fas fa-calendar-check"></i> Ver Registro
-                                </button>
-                            </form>
+                                </a>
+                            <?php } ?>
                         </td>
                         <td>
                             <div class="action-buttons">
@@ -842,12 +591,21 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
                 const membership = row.cells[3].textContent.toLowerCase();
 
                 const matchesSearch = memberName.includes(search);
-                const matchesMembership = !membershipFilter || membership.includes(membershipFilter);
+                let matchesMembership = true;
+
+                if (membershipFilter) {
+                    if (membershipFilter === 'none') {
+                        matchesMembership = membership.includes('sin');
+                    } else {
+                        matchesMembership = membership.includes(membershipFilter);
+                    }
+                }
                 // En una aplicación real, aquí se verificaría el estado del socio
 
                 row.style.display = matchesSearch && matchesMembership ? '' : 'none';
             });
         }
+
 
 
         // Estadísticas rápidas (podrían mostrarse en el header)

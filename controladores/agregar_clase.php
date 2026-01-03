@@ -3,6 +3,12 @@ session_start();
 require_once "../conexion/bd.php";
 
 if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nombre']) && isset($_POST['descripcion']) && isset($_POST['cupo']) && isset($_POST['horario']) && isset($_POST['entrenador'])){
+    
+    // Validar token CSRF
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die('Acceso no autorizado. Token CSRF inválido.');
+    }
+
     $nombre = trim(filter_input(INPUT_POST, 'nombre', FILTER_SANITIZE_STRING));
     $descripcion = trim(filter_input(INPUT_POST, 'descripcion', FILTER_SANITIZE_STRING));
     $cupo = trim(filter_input(INPUT_POST, 'cupo', FILTER_SANITIZE_NUMBER_INT));

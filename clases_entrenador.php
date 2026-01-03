@@ -217,6 +217,13 @@
          padding: 20px;
      }
 
+     /* Wrapper para centrar y limitar ancho del contenido */
+     .page-inner {
+         max-width: 1100px;
+         margin: 0 auto;
+         padding: 0 10px;
+     }
+
      .classes-container {
          background-color: var(--card);
          border-radius: 8px;
@@ -232,6 +239,14 @@
          margin-bottom: 25px;
          padding-bottom: 15px;
          border-bottom: 1px solid #dee2e6;
+     }
+
+     /* Contenedor de acciones en el encabezado */
+     .page-header-actions {
+         display: flex;
+         align-items: center;
+         gap: 10px;
+         margin-left: auto;
      }
 
      .page-header h1 {
@@ -353,7 +368,7 @@
      .table {
          width: 100%;
          border-collapse: collapse;
-         min-width: 800px;
+         min-width: 0; /* Permitir que se adapte en contenedores pequeños; la tabla se scrollea si hace falta */
      }
 
      .table th {
@@ -386,9 +401,10 @@
      /* Vista de Tarjetas (Grid) */
      .grid-container {
          display: grid;
-         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
          gap: 20px;
          margin-bottom: 20px;
+         align-items: start;
      }
 
      .class-card {
@@ -617,6 +633,17 @@
              align-items: flex-start;
          }
 
+         .page-header-actions {
+             width: 100%;
+             display: flex;
+             justify-content: space-between;
+             gap: 10px;
+         }
+
+         .page-header-left h1 {
+             margin-bottom: 0;
+         }
+
          .view-toggle {
              margin: 0;
              align-self: flex-end;
@@ -685,21 +712,26 @@
 
  <!-- Contenido -->
  <div class="content">
+     <div class="page-inner">
      <div class="classes-container">
          <!-- Encabezado -->
          <div class="page-header">
-             <h1>Clases Asignadas</h1>
-             <div class="view-toggle">
-                 <button class="view-btn active" id="viewGrid" onclick="switchView('grid')">
-                     <i class="fas fa-th-large"></i>
-                 </button>
-                 <button class="view-btn" id="viewList" onclick="switchView('list')">
-                     <i class="fas fa-list"></i>
+             <div class="page-header-left">
+                 <h1>Clases Asignadas</h1>
+             </div>
+             <div class="page-header-actions">
+                 <div class="view-toggle">
+                     <button class="view-btn active" id="viewGrid" onclick="switchView('grid')">
+                         <i class="fas fa-th-large"></i>
+                     </button>
+                     <button class="view-btn" id="viewList" onclick="switchView('list')">
+                         <i class="fas fa-list"></i>
+                     </button>
+                 </div>
+                 <button class="btn btn-primary" onclick="verCalendario()">
+                     <i class="fas fa-calendar"></i> Ver Calendario
                  </button>
              </div>
-             <button class="btn btn-primary" onclick="verCalendario()">
-                 <i class="fas fa-calendar"></i> Ver Calendario
-             </button>
          </div>
 
          <!-- Filtros -->
@@ -758,7 +790,38 @@
              <?php endforeach; ?>
          </div>
      </div>
+     </div>
  </div>
- </div>
- </div>
+ <script>
+   function switchView(mode) {
+     const grid = document.getElementById('gridView');
+     const list = document.getElementById('listView');
+     document.getElementById('viewGrid').classList.toggle('active', mode === 'grid');
+     document.getElementById('viewList').classList.toggle('active', mode === 'list');
+     if (grid) grid.style.display = (mode === 'grid' ? 'grid' : 'none');
+     if (list) list.style.display = (mode === 'list' ? 'block' : 'none');
+   }
+   function verCalendario() {
+     // Cambia a la ruta real si tienes una página de calendario
+     window.location.href = 'calendario_clases.php';
+   }
+   function filtrarClases() {
+     // Filtro simple: sólo reinicia por ahora
+     // Implementar filtrado dinámico si se desea
+     console.log('Filtrar clases (implementar lógica si es necesario)');
+   }
+   function resetFilters() {
+     document.getElementById('statusFilter').value = '';
+     document.getElementById('typeFilter').value = '';
+     document.getElementById('dateFilter').value = '';
+     filtrarClases();
+   }
+   function registrarAsistencia(id) {
+     alert('Registrar asistencia (id clase: ' + id + ')');
+   }
+   function verDetalles(id) {
+     // Redirigir a la página de detalles si existe
+     window.location.href = 'editar_clase.php?id=' + id;
+   }
+ </script>
  <?php require_once "templates/footer.php"; ?>

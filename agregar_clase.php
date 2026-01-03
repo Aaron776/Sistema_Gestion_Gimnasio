@@ -21,35 +21,7 @@ $sql->execute();
 $entrenadores = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
 <style>
-    :root {
-        --primary: #2c3e50;
-        --secondary: #e74c3c;
-        --accent: #3498db;
-        --light: #ecf0f1;
-        --dark: #2c3e50;
-        --success: #2ecc71;
-        --warning: #f39c12;
-        --info: #17a2b8;
-        --sidebar: #1a252f;
-        --sidebar-hover: #2c3e50;
-        --header: #2c3e50;
-        --content: #ecf0f1;
-        --card: #ffffff;
-        --font-main: 'Montserrat', sans-serif;
-        --font-secondary: 'Open Sans', sans-serif;
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: var(--font-secondary);
-        background-color: var(--content);
-        overflow-x: hidden;
-    }
+    /* Estilos específicos de la página */
 
     .alert {
         padding: 10px 15px;
@@ -64,184 +36,6 @@ $entrenadores = $sql->fetchAll(PDO::FETCH_OBJ);
         border: 1px solid #f5c6cb;
     }
 
-    /* Layout Principal */
-    .wrapper {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    /* Sidebar */
-    .sidebar {
-        width: 250px;
-        background-color: var(--sidebar);
-        color: white;
-        transition: all 0.3s;
-        position: fixed;
-        height: 100vh;
-        z-index: 1000;
-        box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar-header {
-        padding: 20px;
-        background-color: rgba(0, 0, 0, 0.2);
-        text-align: center;
-        border-bottom: 1px solid #2c3e50;
-    }
-
-    .sidebar-header h3 {
-        color: white;
-        margin: 0;
-        font-size: 1.5rem;
-        font-family: var(--font-main);
-    }
-
-    .sidebar-header h3 span {
-        color: var(--secondary);
-    }
-
-    .sidebar-menu {
-        padding: 10px 0;
-    }
-
-    .sidebar-menu ul {
-        list-style: none;
-    }
-
-    .sidebar-menu li {
-        position: relative;
-    }
-
-    .sidebar-menu a {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        color: #c2c7d0;
-        text-decoration: none;
-        transition: all 0.3s;
-        font-size: 0.95rem;
-    }
-
-    .sidebar-menu a:hover {
-        color: white;
-        background-color: var(--sidebar-hover);
-    }
-
-    .sidebar-menu a.active {
-        color: white;
-        background-color: var(--secondary);
-        border-left: 4px solid var(--secondary);
-    }
-
-    .sidebar-menu i {
-        margin-right: 10px;
-        width: 20px;
-        text-align: center;
-        font-size: 1.1rem;
-    }
-
-    /* Contenido Principal */
-    .main-content {
-        flex: 1;
-        margin-left: 250px;
-        transition: all 0.3s;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-
-    /* Header */
-    .header {
-        background-color: var(--header);
-        padding: 15px 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: white;
-    }
-
-    .toggle-sidebar {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: white;
-        cursor: pointer;
-        margin-right: 15px;
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-    }
-
-    .header-title {
-        font-family: var(--font-main);
-        font-size: 1.5rem;
-    }
-
-    .user-menu {
-        display: flex;
-        align-items: center;
-    }
-
-    .user-info {
-        margin-right: 15px;
-        text-align: right;
-    }
-
-    .user-name {
-        font-weight: 600;
-        color: white;
-        font-family: var(--font-main);
-    }
-
-    .user-role {
-        font-size: 0.8rem;
-        color: #c2c7d0;
-    }
-
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--secondary);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-family: var(--font-main);
-    }
-
-    .notification-bell {
-        position: relative;
-        margin-right: 20px;
-        font-size: 1.2rem;
-        color: white;
-        cursor: pointer;
-    }
-
-    .notification-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: var(--secondary);
-        color: white;
-        border-radius: 50%;
-        width: 18px;
-        height: 18px;
-        font-size: 0.7rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Contenido */
-    .content {
-        padding: 20px;
-    }
-
     .class-form-container {
         background-color: var(--card);
         border-radius: 8px;
@@ -252,6 +46,7 @@ $entrenadores = $sql->fetchAll(PDO::FETCH_OBJ);
         margin: 0 auto;
     }
 
+    /* Sobrescribir page-header para tener flex */
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -557,22 +352,6 @@ $entrenadores = $sql->fetchAll(PDO::FETCH_OBJ);
 
     /* Responsive */
     @media (max-width: 768px) {
-        .sidebar {
-            margin-left: -250px;
-        }
-
-        .sidebar.active {
-            margin-left: 0;
-        }
-
-        .main-content {
-            margin-left: 0;
-        }
-
-        .main-content.active {
-            margin-left: 250px;
-        }
-
         .class-form-container {
             padding: 20px;
             margin: 10px;

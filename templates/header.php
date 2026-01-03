@@ -9,6 +9,15 @@ if (!isset($_SESSION['rol'])) {
     header("Location: login.php");
     exit;
 }
+require_once "conexion/bd.php";
+
+$id_socio = $_SESSION['id_usuario'];
+
+// Verificar si el usuario con rol socio que se loguea tiene una membresia activa
+$sql = $conexion->prepare("SELECT * FROM membresia_usuario WHERE id_usuario = :id_usuario  AND estado = 'activa'");
+$sql->bindParam(':id_usuario', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -586,6 +595,7 @@ if (!isset($_SESSION['rol'])) {
                         <li><a href="dash_admin.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                         <li><a href="gestion_usuarios.php"><i class="fas fa-users"></i> Gestion Usuarios</a></li>
                         <li><a href="gestion_membresias.php"><i class="fas fa-dumbbell"></i> Gestion Membresias</a></li>
+                        <li><a href="listado_solicitudes_cancelar_membresias.php"><i class="fas fa-user-xmark"></i> Solicitudes de Cancelación de Membresias</a></li>
                         <li><a href="gestion_clases.php"><i class="fas fa-calendar-alt"></i> Gestion Clases</a></li>
                         <li><a href="gestion_pagos.php"><i class="fas fa-money-bill-wave"></i> Gestion Pagos</a></li>
                         <li><a href="gestion_socios.php"><i class="fas fa-user-shield"></i> Gestion Socios</a></li>
@@ -593,8 +603,11 @@ if (!isset($_SESSION['rol'])) {
                     <?php } elseif ($_SESSION['rol'] == 'socio') { ?>
                         <li><a href="dash_cliente.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                         <li><a href="membresia_socio.php"><i class="fas fa-dumbbell"></i> Mi Membresia</a></li>
-                        <li><a href="mis_clases.php"><i class="fas fa-book"></i> Mis Clases</a></li>
-                        <li><a href="asistencia_socio.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
+                        <?php if ($membresia_socio == true) { ?>
+                            <li><a href="clases_socio.php"><i class="fas fa-book"></i> Mis Clases</a></li>
+                            <li><a href="asistencia_socio.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
+                            <li><a href="rutinas_socio.php"><i class="fas fa-book"></i> Mis Rutinas</a></li>
+                        <?php } ?>
                     <?php } elseif ($_SESSION['rol'] == 'entrenador') { ?>
                         <li><a href="dash_entrenador.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                         <li><a href="clases_entrenador.php"><i class="fas fa-book"></i> Mis Clases</a></li>
@@ -602,7 +615,7 @@ if (!isset($_SESSION['rol'])) {
                         <li><a href="asignacion_rutinas.php"><i class="fas fa-book"></i> Asignacion Rutinas</a></li>
                         <li><a href="siguimientos_entrenador.php"><i class="fas fa-chart-line"></i> Siguimientos Socios</a></li>
                     <?php } ?>
-                    <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+                    <li><a href="configuracion_cuenta.php"><i class="fas fa-cog"></i> Configuración</a></li>
                     <li><a href="controladores/logout.php" style="color: var(--secondary);"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
                 </ul>
             </div>

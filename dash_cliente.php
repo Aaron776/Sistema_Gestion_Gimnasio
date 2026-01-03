@@ -8,6 +8,72 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'socio') {
 }
 require_once "templates/header.php";
 include_once "conexion/bd.php";
+
+$id_socio = $_SESSION['id_usuario']; // obtener id del socio actual
+
+// Obtener las ultimas tres clases inscritas de este socio
+$sql = $conexion->prepare("SELECT clases.nombre as nombre_clase,clases.horario as horario FROM inscripciones INNER JOIN clases ON inscripciones.id_clase = clases.id WHERE inscripciones.id_socio = :id_socio  ORDER BY inscripciones.fecha_inscripcion DESC LIMIT 3");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$clases = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// Obtener las ultimas tres rutinas asignadas a este socio
+$sql = $conexion->prepare("SELECT rutinas.descripcion as descripcion, rutinas.fecha_asignacion as fecha_asignacion FROM rutinas INNER JOIN usuarios ON rutinas.id_socio = usuarios.id WHERE usuarios.id = :id_socio  ORDER BY rutinas.fecha_asignacion DESC LIMIT 3");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$rutinas = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// Obtener peso actual
+$sql = $conexion->prepare("SELECT peso FROM progreso WHERE id_socio = :id_socio ORDER BY fecha_registro DESC LIMIT 1");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$peso_actual = $sql->fetch(PDO::FETCH_OBJ);
+
+
+// Obtener masa muscular actual
+$sql = $conexion->prepare("SELECT masa_muscular FROM progreso WHERE id_socio = :id_socio ORDER BY fecha_registro DESC LIMIT 1");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$masa_muscular_actual = $sql->fetch(PDO::FETCH_OBJ);
+
+// Obtener porcentaje de grasa corporal actual
+$sql = $conexion->prepare("SELECT grasa_corporal FROM progreso WHERE id_socio = :id_socio ORDER BY fecha_registro DESC LIMIT 1");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$grasa_corporal_actual = $sql->fetch(PDO::FETCH_OBJ);
+
+// ------------------------------------------------------------------------------------------------
+// [PASO 1] OBTENER HISTORIAL DE PROGRESO
+// Obtenemos los últimos 6 registros de progreso para mostrar en la tabla y en el gráfico.
+// Ordenamos por fecha descendente (más reciente primero) para la tabla.
+// ------------------------------------------------------------------------------------------------
+$sql = $conexion->prepare("SELECT * FROM progreso WHERE id_socio = :id_socio ORDER BY fecha_registro DESC LIMIT 6");
+$sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->execute();
+$historial_progreso = $sql->fetchAll(PDO::FETCH_OBJ);
+
+// Para el gráfico, necesitamos los datos en orden cronológico (más antiguo primero).
+// Así que invertimos el array que usaremos para los datos del gráfico.
+$datos_grafico = array_reverse($historial_progreso);
+
+$labels = [];
+$peso_data = [];
+$grasa_data = [];
+$musculo_data = [];
+
+foreach ($datos_grafico as $registro) {
+    // Formateamos la fecha a algo más corto, ej: '15 Mar'
+    $date = new DateTime($registro->fecha_registro);
+    // Array de meses en español para formateo personalizado si se desea, o usar format simple
+    $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    $mes_index = (int)$date->format('n') - 1;
+    $fecha_formateada = $date->format('d') . ' ' . $meses[$mes_index];
+
+    $labels[] = $fecha_formateada;
+    $peso_data[] = $registro->peso;
+    $grasa_data[] = $registro->grasa_corporal;
+    $musculo_data[] = $registro->masa_muscular;
+}
 ?>
 <style>
     :root {
@@ -71,15 +137,14 @@ include_once "conexion/bd.php";
         margin-bottom: 30px;
     }
 
-    .metric-card {
-        background-color: var(--card);
+    /* .metric-card hereda estilos de header.php, solo sobrescribimos lo necesario */
+    .main-metrics .metric-card {
         border-radius: 12px;
         padding: 25px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s;
     }
 
-    .metric-card:hover {
+    .main-metrics .metric-card:hover {
         transform: translateY(-5px);
     }
 
@@ -96,15 +161,10 @@ include_once "conexion/bd.php";
         font-family: var(--font-main);
     }
 
-    .metric-icon {
-        width: 60px;
-        height: 60px;
+    /* .metric-icon hereda estilos de header.php, solo sobrescribimos lo necesario */
+    .main-metrics .metric-icon {
         border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 1.8rem;
-        color: white;
     }
 
     .metric-icon.weight {
@@ -142,20 +202,12 @@ include_once "conexion/bd.php";
         color: var(--muscle);
     }
 
+    /* .metric-trend, .trend-up, .trend-down heredan de header.php */
+    /* Solo agregamos estilos específicos si es necesario */
     .metric-trend {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.95rem;
-        font-weight: 600;
-    }
-
-    .trend-up {
-        color: var(--success);
-    }
-
-    .trend-down {
-        color: var(--danger);
     }
 
     /* Dashboard Grid */
@@ -198,9 +250,9 @@ include_once "conexion/bd.php";
         margin-right: 10px;
     }
 
-    .chart-wrapper {
+    /* .chart-wrapper hereda de header.php, solo ajustamos altura específica */
+    .chart-card .chart-wrapper {
         height: 250px;
-        position: relative;
     }
 
     /* Próximas Clases */
@@ -491,40 +543,22 @@ include_once "conexion/bd.php";
         margin-right: 10px;
     }
 
-    .actions-grid {
-        display: grid;
+    /* .actions-grid y .action-btn heredan de header.php, solo ajustamos lo específico */
+    .quick-actions .actions-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
     }
 
-    .action-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+    .quick-actions .action-btn {
         padding: 20px 15px;
-        background: #f8f9fa;
         border-radius: 10px;
-        text-decoration: none;
-        color: var(--dark);
-        transition: all 0.3s;
-        text-align: center;
     }
 
-    .action-btn:hover {
+    .quick-actions .action-btn:hover {
         background: var(--accent);
-        color: white;
-        transform: translateY(-3px);
     }
 
-    .action-btn i {
+    .quick-actions .action-btn i {
         font-size: 1.8rem;
-        margin-bottom: 10px;
-    }
-
-    .action-btn span {
-        font-size: 0.9rem;
-        font-weight: 600;
     }
 
     /* Logros */
@@ -612,7 +646,7 @@ include_once "conexion/bd.php";
             grid-template-columns: 1fr;
         }
 
-        .actions-grid {
+        .quick-actions .actions-grid {
             grid-template-columns: repeat(2, 1fr);
         }
     }
@@ -636,7 +670,7 @@ include_once "conexion/bd.php";
             gap: 15px;
         }
 
-        .actions-grid {
+        .quick-actions .actions-grid {
             grid-template-columns: 1fr;
         }
 
@@ -650,73 +684,75 @@ include_once "conexion/bd.php";
     <!-- Banner de bienvenida -->
     <div class="welcome-banner">
         <div class="welcome-text">
-            <h1>¡Bienvenido de nuevo, <?php echo htmlspecialchars($_SESSION['nombre'].' '.$_SESSION['apellido']); ?>!</h1>
+            <h1>¡Bienvenido de nuevo, <?php echo htmlspecialchars($_SESSION['nombre'] . ' ' . $_SESSION['apellido']); ?>!</h1>
             <p>Tu dedicación está dando resultados. Sigue así para alcanzar tus metas de fitness.</p>
         </div>
     </div>
 
     <!-- Métricas principales -->
-    <div class="main-metrics">
-        <div class="metric-card">
-            <div class="metric-header">
-                <h3 class="metric-title">Peso Actual</h3>
-                <div class="metric-icon weight">
-                    <i class="fas fa-weight"></i>
+    <?php if ($peso_actual && $masa_muscular_actual && $grasa_corporal_actual): ?>
+        <div class="main-metrics">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Peso Actual</h3>
+                    <div class="metric-icon weight">
+                        <i class="fas fa-weight"></i>
+                    </div>
                 </div>
+                <div class="metric-value weight-value"><?php echo htmlspecialchars($peso_actual->peso); ?> kg</div>
             </div>
-            <div class="metric-value weight-value">78.5 kg</div>
-            <div class="metric-trend">
-                <i class="fas fa-arrow-down trend-down"></i>
-                <span class="trend-down">-1.5 kg este mes</span>
-            </div>
-            <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: 75 kg</p>
-        </div>
 
-        <div class="metric-card">
-            <div class="metric-header">
-                <h3 class="metric-title">Grasa Corporal</h3>
-                <div class="metric-icon fat">
-                    <i class="fas fa-percentage"></i>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Grasa Corporal</h3>
+                    <div class="metric-icon fat">
+                        <i class="fas fa-percentage"></i>
+                    </div>
                 </div>
+                <div class="metric-value fat-value"><?php echo htmlspecialchars($grasa_corporal_actual->grasa_corporal); ?> %</div>
             </div>
-            <div class="metric-value fat-value">22.0 %</div>
-            <div class="metric-trend">
-                <i class="fas fa-arrow-down trend-down"></i>
-                <span class="trend-down">-2.0% este mes</span>
-            </div>
-            <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: 18%</p>
-        </div>
 
-        <div class="metric-card">
-            <div class="metric-header">
-                <h3 class="metric-title">Masa Muscular</h3>
-                <div class="metric-icon muscle">
-                    <i class="fas fa-dumbbell"></i>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Masa Muscular</h3>
+                    <div class="metric-icon muscle">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
                 </div>
+                <div class="metric-value muscle-value"><?php echo htmlspecialchars($masa_muscular_actual->masa_muscular); ?> kg</div>
             </div>
-            <div class="metric-value muscle-value">35.0 kg</div>
-            <div class="metric-trend">
-                <i class="fas fa-arrow-up trend-up"></i>
-                <span class="trend-up">+1.5 kg este mes</span>
-            </div>
-            <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Meta: 38 kg</p>
         </div>
-
-        <div class="metric-card">
-            <div class="metric-header">
-                <h3 class="metric-title">Próxima Clase</h3>
-                <div class="metric-icon calendar">
-                    <i class="fas fa-calendar-alt"></i>
+    <?php else: ?>
+        <div class="main-metrics">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Peso Actual</h3>
+                    <div class="metric-icon weight">
+                        <i class="fas fa-weight"></i>
+                    </div>
                 </div>
+                <div class="metric-value weight-value">No hay datos</div>
             </div>
-            <div class="metric-value" style="color: var(--accent);">10:00 AM</div>
-            <div class="metric-trend">
-                <i class="fas fa-clock"></i>
-                <span>CrossFit en 2 horas</span>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Grasa Corporal</h3>
+                    <div class="metric-icon fat">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                </div>
+                <div class="metric-value fat-value">No hay datos</div>
             </div>
-            <p style="color: #6c757d; margin-top: 10px; font-size: 0.9rem;">Con el entrenador Carlos</p>
+            <div class="metric-card">
+                <div class="metric-header">
+                    <h3 class="metric-title">Masa Muscular</h3>
+                    <div class="metric-icon muscle">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                </div>
+                <div class="metric-value muscle-value">No hay datos</div>
+            </div>
         </div>
-    </div>
+    <?php endif; ?>
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
@@ -737,36 +773,15 @@ include_once "conexion/bd.php";
                 <a href="mis-clases.html" class="view-all">Ver todas</a>
             </div>
             <ul class="classes-list">
-                <li class="class-item">
-                    <div class="class-icon crossfit">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <div class="class-info">
-                        <div class="class-name">CrossFit Intermedio</div>
-                        <div class="class-time">Hoy • 10:00 - 11:30 AM</div>
-                    </div>
-                    <span class="class-status status-confirmed">Confirmada</span>
-                </li>
-                <li class="class-item">
-                    <div class="class-icon yoga">
-                        <i class="fas fa-spa"></i>
-                    </div>
-                    <div class="class-info">
-                        <div class="class-name">Yoga Matutino</div>
-                        <div class="class-time">Mañana • 08:00 - 09:00 AM</div>
-                    </div>
-                    <span class="class-status status-confirmed">Confirmada</span>
-                </li>
-                <li class="class-item">
-                    <div class="class-icon spinning">
-                        <i class="fas fa-bicycle"></i>
-                    </div>
-                    <div class="class-info">
-                        <div class="class-name">Spinning Avanzado</div>
-                        <div class="class-time">Jueves • 16:00 - 17:00 PM</div>
-                    </div>
-                    <span class="class-status status-pending">Por confirmar</span>
-                </li>
+                <?php foreach ($clases as $item) { ?>
+                    <li class="class-item">
+                        <div class="class-info">
+                            <div class="class-name"><?php echo htmlspecialchars($item->nombre_clase); ?></div>
+                            <div class="class-time"><?php echo htmlspecialchars($item->horario); ?></div>
+                        </div>
+                        <span class="class-status status-confirmed">Confirmada</span>
+                    </li>
+                <?php } ?>
             </ul>
         </div>
 
@@ -776,57 +791,18 @@ include_once "conexion/bd.php";
                 <h3><i class="fas fa-dumbbell"></i> Rutina de Hoy</h3>
             </div>
             <div class="routine-details">
-                <div class="routine-meta">
-                    <div class="meta-item">
-                        <i class="fas fa-dumbbell"></i>
-                        <div>
-                            <div class="meta-label">Tipo</div>
-                            <div class="meta-value">Fuerza Superior</div>
-                        </div>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <div class="meta-label">Duración</div>
-                            <div class="meta-value">60 minutos</div>
-                        </div>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-bullseye"></i>
-                        <div>
-                            <div class="meta-label">Objetivo</div>
-                            <div class="meta-value">Hipertrofia</div>
-                        </div>
-                    </div>
-                </div>
                 <ul class="exercises-list">
-                    <li class="exercise-item">
-                        <div class="exercise-icon">
-                            <i class="fas fa-weight"></i>
-                        </div>
-                        <div class="exercise-info">
-                            <div class="exercise-name">Press de Banca</div>
-                            <div class="exercise-sets">4 series × 8-10 repeticiones</div>
-                        </div>
-                    </li>
-                    <li class="exercise-item">
-                        <div class="exercise-icon">
-                            <i class="fas fa-dumbbell"></i>
-                        </div>
-                        <div class="exercise-info">
-                            <div class="exercise-name">Remo con Barra</div>
-                            <div class="exercise-sets">3 series × 10-12 repeticiones</div>
-                        </div>
-                    </li>
-                    <li class="exercise-item">
-                        <div class="exercise-icon">
-                            <i class="fas fa-weight-hanging"></i>
-                        </div>
-                        <div class="exercise-info">
-                            <div class="exercise-name">Press Militar</div>
-                            <div class="exercise-sets">3 series × 8-10 repeticiones</div>
-                        </div>
-                    </li>
+                    <?php foreach ($rutinas as $item) { ?>
+                        <li class="exercise-item">
+                            <div class="exercise-icon">
+                                <i class="fas fa-dumbbell"></i>
+                            </div>
+                            <div class="exercise-info">
+                                <div class="exercise-name"><?php echo htmlspecialchars($item->descripcion); ?></div>
+                                <div class="exercise-sets"><?php echo htmlspecialchars($item->fecha_asignacion); ?></div>
+                            </div>
+                        </li>
+                    <?php } ?>
                 </ul>
             </div>
         </div>
@@ -847,36 +823,67 @@ include_once "conexion/bd.php";
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>15 Mar 2024</td>
-                        <td>78.5 kg <div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>
-                        </td>
-                        <td>22.0% <div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>
-                        </td>
-                        <td>35.0 kg <div class="trend-indicator"><i class="fas fa-arrow-up trend-up"></i></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>08 Mar 2024</td>
-                        <td>79.0 kg <div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>
-                        </td>
-                        <td>22.2% <div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>
-                        </td>
-                        <td>34.8 kg <div class="trend-indicator"><i class="fas fa-arrow-up trend-up"></i></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>01 Mar 2024</td>
-                        <td>79.5 kg</td>
-                        <td>22.5%</td>
-                        <td>34.5 kg</td>
-                    </tr>
-                    <tr>
-                        <td>23 Feb 2024</td>
-                        <td>80.0 kg</td>
-                        <td>23.0%</td>
-                        <td>34.0 kg</td>
-                    </tr>
+                    <?php
+                    // [PASO 2] GENERAR TABLA DE PROGRESO
+                    // Iteramos sobre el historial obtenido.
+                    // $historial_progreso ya está ordenado del más reciente al más antiguo.
+                    foreach ($historial_progreso as $index => $registro):
+                        // Lógica para comparar con el registro anterior (que en este array ordenado DESC es el siguiente elemento)
+                        // para determinar si hubo subida o bajada.
+                        $prev_registro = isset($historial_progreso[$index + 1]) ? $historial_progreso[$index + 1] : null;
+
+                        // Iconos de tendencia
+                        $trend_down = '<div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>';
+                        $trend_up = '<div class="trend-indicator"><i class="fas fa-arrow-up trend-up"></i></div>';
+
+                        // Determinar tendencia (Peso: bajar es bueno/verde? Depende. Asumiremos visualización simple: Arriba=Rojo/Verde según contexto?)
+                        // Para simplificar: Arriba=Flecha Arriba, Abajo=Flecha Abajo. Colores: Up=Success(verde)? No siempre.
+                        // Usaremos la convención visual: 
+                        // Peso: si baja -> flecha abajo verde (trend-down es rojo en CSS, ajustaremos si es necesario o usaremos clases standard).
+                        // Vamos a usar colores neutros o clases existentes. En la plantilla original:
+                        // "trend-down" tiene color danger(rojo), "trend-up" tiene color success(verde).
+                        // Generalmente bajar peso y grasa es "bueno" -> verde, subir músculo es "bueno" -> verde.
+                        // Pero la clase "trend-down" es roja. Vamos a mantener la coherencia visual de las flechas simplemente indicando dirección.
+
+                        // PESO
+                        $peso_trend = '';
+                        if ($prev_registro) {
+                            if ($registro->peso < $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
+                            elseif ($registro->peso > $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
+                        }
+
+                        // GRASA
+                        $grasa_trend = '';
+                        if ($prev_registro) {
+                            if ($registro->grasa_corporal < $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
+                            elseif ($registro->grasa_corporal > $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
+                        }
+
+                        // MUSCULO
+                        $musculo_trend = '';
+                        if ($prev_registro) {
+                            if ($registro->masa_muscular > $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--success);"></i></div>';
+                            elseif ($registro->masa_muscular < $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--danger);"></i></div>';
+                        }
+
+                        $dateObj = new DateTime($registro->fecha_registro);
+                        $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                        $mes_index = (int)$dateObj->format('n') - 1;
+                        $fecha_espanol = $dateObj->format('d') . ' ' . $meses[$mes_index] . ' ' . $dateObj->format('Y');
+                    ?>
+                        <tr>
+                            <td><?php echo $fecha_espanol; ?></td>
+                            <td><?php echo htmlspecialchars($registro->peso); ?> kg <?php echo $peso_trend; ?></td>
+                            <td><?php echo htmlspecialchars($registro->grasa_corporal); ?>% <?php echo $grasa_trend; ?></td>
+                            <td><?php echo htmlspecialchars($registro->masa_muscular); ?> kg <?php echo $musculo_trend; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <?php if (empty($historial_progreso)): ?>
+                        <tr>
+                            <td colspan="4" style="text-align:center;">No hay registros de progreso recientes.</td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -957,12 +964,13 @@ include_once "conexion/bd.php";
 </div>
 
 <script>
-    // Datos para gráficos
+    // [PASO 3] CONFIGURACIÓN DEL GRÁFICO
+    // Inyectamos los datos preparados en PHP directamente en el objeto de configuración JS.
     const evolutionData = {
-        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-        peso: [84.0, 82.0, 80.0, 79.5, 78.5, 78.5],
-        grasa: [26.0, 24.5, 23.0, 22.5, 22.0, 22.0],
-        musculo: [31.0, 32.0, 33.5, 34.0, 35.0, 35.0]
+        labels: <?php echo json_encode($labels); ?>,
+        peso: <?php echo json_encode($peso_data); ?>,
+        grasa: <?php echo json_encode($grasa_data); ?>,
+        musculo: <?php echo json_encode($musculo_data); ?>
     };
 
     // Inicializar gráfico de evolución

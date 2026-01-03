@@ -42,7 +42,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_socio'])){
     }
 
     if(empty($errores)){
-        $sql=$conexion->prepare("DELETE FROM usuarios WHERE id=:id");
+        $sql=$conexion->prepare("DELETE FROM usuarios WHERE id=:id AND rol='socio'LIMIT 1");
         $sql->bindParam(':id', $id_socio, PDO::PARAM_INT);
         $sql->execute();
 

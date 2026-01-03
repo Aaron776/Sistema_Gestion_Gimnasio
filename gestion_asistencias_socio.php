@@ -7,20 +7,16 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
     exit();
 }
 
-// OBTENER ID DE LA CLASE DESDE POST O SESIÓN
-if (isset($_POST['id_socio'])) {
-    $_SESSION['id_socio'] = trim($_POST['id_socio']);
-}
+require_once "templates/header.php";
+include_once "conexion/bd.php";
 
-$id_socio = $_SESSION['id_socio'] ?? null;
+$id_socio = $_GET['id_socio'] ?? null;
 
 // Validar que exista el ID
 if (empty($id_socio) || !is_numeric($id_socio) || $id_socio <= 0) {
     header("Location: gestion_socios.php"); // si no lo mandamos al listado de socios
     exit();
 }
-require_once "templates/header.php";
-include_once "conexion/bd.php";
 
 // Obntener registro de asistencias del socio
 $sql = $conexion->prepare("SELECT fecha, hora_entrada, hora_salida FROM asistencia WHERE id_usuario = :id_socio ORDER BY fecha DESC, hora_entrada DESC");
@@ -789,7 +785,6 @@ $promedioHoras = ($diasContados > 0) ? round($totalHoras / $diasContados, 2) : 0
                             <?php } else { ?>
                                 -
                             <?php } ?>
-                        </td>
                         </td>
                         <td class="duration">
                             <?php
