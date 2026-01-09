@@ -607,6 +607,7 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
                             <li><a href="clases_socio.php"><i class="fas fa-book"></i> Mis Clases</a></li>
                             <li><a href="asistencia_socio.php"><i class="fas fa-clipboard-list"></i> Mi Asistencia</a></li>
                             <li><a href="rutinas_socio.php"><i class="fas fa-book"></i> Mis Rutinas</a></li>
+                            <li><a href="actualizarPassword.php"><i class="fas fa-lock"></i> Actualizar Contraseña</a></li>
                         <?php } ?>
                     <?php } elseif ($_SESSION['rol'] == 'entrenador') { ?>
                         <li><a href="dash_entrenador.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
