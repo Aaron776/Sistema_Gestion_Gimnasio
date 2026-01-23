@@ -66,7 +66,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_usuario']) && isset(
     }
 
 
-    // Verificar si existe un usuario con el mismo correo o telefono
+    // Verificar si existe un usuario con el mismo correo o telefono que sea diferente al que se actualiza en ese moomento
     if(empty($errores)){
         $sql = $conexion->prepare("SELECT * FROM usuarios WHERE (email = :email OR telefono = :telefono) AND id != :id_usuario LIMIT 1");
         $sql->bindParam(':email', $email,PDO::PARAM_STR);
@@ -75,7 +75,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id_usuario']) && isset(
         $sql->execute();
         $usuario_encontrado = $sql->fetch();
         if($usuario_encontrado){
-            $errores[] = 'El email o el telefono ya estan registrados';
+            $errores[] = 'Otro usuario con ese email o telefono ya existe';
         }
     }
 

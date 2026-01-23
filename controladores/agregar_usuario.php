@@ -68,7 +68,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['telefono']) && isset($_
         $sql->execute();
         $usuario_encontrado = $sql->fetch();
         if($usuario_encontrado){
-            $errores[] = 'El email o el telefono ya estan registrados';
+            $errores[] = 'Un usuario con ese email o telefono ya existe';
         }
     }
 
