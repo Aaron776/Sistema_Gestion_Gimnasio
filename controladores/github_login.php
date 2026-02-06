@@ -1,22 +1,26 @@
 <?php
-session_start();
-
-// Configuración de GitHub OAuth
-$client_id = 'Ov23lifjnaK1bHrQpcKP';
-$redirect_uri = 'http://localhost/Sistemas_Web_PHP/Sistema_Gestion_Gimnasio/controladores/github_callback.php';
-$scope = 'user:email';
-
-// Generar estado para CSRF protection
-$state = bin2hex(random_bytes(16));
-$_SESSION['github_oauth_state'] = $state;
-
-// URL de autorización de GitHub
-$auth_url = "https://github.com/login/oauth/authorize?" . http_build_query([
-    'client_id' => $client_id,
-    'redirect_uri' => $redirect_uri,
-    'scope' => $scope,
-    'state' => $state
+// Configurar cookies de sesión para OAuth
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => false, // Cambiar a true en producción con HTTPS
+    'httponly' => true,
+    'samesite' => 'Lax' // Permite cookies en redirects desde sitios externos
 ]);
 
-header("Location: $auth_url");
+session_start();
+require_once '../config/oauth_config.php';
+
+$state = bin2hex(random_bytes(16));
+$_SESSION['oauth_state'] = $state;
+
+$params = [
+    'client_id' => GITHUB_CLIENT_ID,
+    'redirect_uri' => GITHUB_REDIRECT_URI,
+    'scope' => 'user:email',
+    'state' => $state
+];
+
+header('Location: https://github.com/login/oauth/authorize?' . http_build_query($params));
 exit;
