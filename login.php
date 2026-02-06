@@ -3,6 +3,7 @@ session_start();
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -170,11 +171,11 @@ session_start();
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .checkbox-label:hover input ~ .checkmark {
+        .checkbox-label:hover input~.checkmark {
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        .checkbox-label input:checked ~ .checkmark {
+        .checkbox-label input:checked~.checkmark {
             background-color: var(--secondary);
             border-color: var(--secondary);
         }
@@ -185,7 +186,7 @@ session_start();
             display: none;
         }
 
-        .checkbox-label input:checked ~ .checkmark:after {
+        .checkbox-label input:checked~.checkmark:after {
             display: block;
         }
 
@@ -305,6 +306,10 @@ session_start();
             background: #4267B2;
         }
 
+        .social-btn.github:hover {
+            background: #333;
+        }
+
         .welcome-title {
             font-family: var(--font-main);
             font-size: 2rem;
@@ -406,35 +411,37 @@ session_start();
             .auth-container {
                 flex-direction: column;
             }
-            
-            .auth-left, .auth-right {
+
+            .auth-left,
+            .auth-right {
                 padding: 30px 20px;
             }
-            
+
             .form-options {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 15px;
             }
-            
+
             .social-login {
                 flex-direction: column;
             }
-            
+
             .logo {
                 font-size: 1.8rem;
             }
-            
+
             .form-title {
                 font-size: 1.5rem;
             }
-            
+
             .welcome-title {
                 font-size: 1.5rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="auth-container">
@@ -443,9 +450,9 @@ session_start();
                 <div class="logo">Power<span>Fit</span></div>
                 <h2 class="form-title">Iniciar Sesión</h2>
                 <p class="form-subtitle">Accede a tu cuenta para gestionar tu membresía</p>
-                
+
                 <form class="auth-form" id="loginForm" action="controladores/login.php" method="POST">
-                <?php if (isset($_SESSION['errores'])) : ?>
+                    <?php if (isset($_SESSION['errores'])) : ?>
                         <div class="alert alert-danger">
                             <ul>
                                 <?php foreach ($_SESSION['errores'] as $error) : ?>
@@ -456,17 +463,17 @@ session_start();
                         <?php unset($_SESSION['errores']); ?>
                     <?php endif; ?>
                     <div class="form-message" id="formMessage"></div>
-                    
+
                     <div class="form-group">
                         <label class="form-label" for="loginEmail">Email</label>
                         <input type="email" class="form-input" name="email" id="loginEmail" placeholder="tu@email.com" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label" for="loginPassword">Contraseña</label>
                         <input type="password" name="password" class="form-input" id="loginPassword" placeholder="Tu contraseña" required>
                     </div>
-                    
+
                     <div class="form-options">
                         <label class="checkbox-label">
                             <input type="checkbox" id="rememberMe">
@@ -475,42 +482,46 @@ session_start();
                         </label>
                         <a href="olvidar_password.php" class="forgot-password">¿Olvidaste tu contraseña?</a>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-                    
+
                     <div class="auth-switch">
                         ¿No tienes una cuenta? <a href="registro.php">Regístrate aquí</a>
                     </div>
                 </form>
-                
+
                 <div class="divider">
                     <span>o continúa con</span>
                 </div>
-                
+
                 <div class="social-login">
                     <a href="#" class="social-btn google">
                         <i class="fab fa-google"></i>
                         Google
                     </a>
-                    <a href="#" class="social-btn facebook">
+                    <a href="controladores/facebook_login.php" class="social-btn facebook">
                         <i class="fab fa-facebook-f"></i>
                         Facebook
                     </a>
+                    <a href="controladores/github_login.php" class="social-btn github">
+                        <i class="fab fa-github"></i>
+                        GitHub
+                    </a>
                 </div>
             </div>
-            
+
             <!-- Panel derecho - Información -->
             <div class="auth-right">
                 <h2 class="welcome-title">¡Bienvenido de nuevo!</h2>
                 <p class="welcome-text">Continúa tu viaje fitness con nosotros. Accede a tu perfil para ver tu progreso, reservar clases y gestionar tu membresía.</p>
-                
+
                 <ul class="auth-features">
                     <li><i class="fas fa-dumbbell"></i> Seguimiento de tu progreso</li>
                     <li><i class="fas fa-calendar-alt"></i> Reserva de clases</li>
                     <li><i class="fas fa-chart-line"></i> Estadísticas personalizadas</li>
                     <li><i class="fas fa-user-friends"></i> Comunidad fitness</li>
                 </ul>
-                
+
                 <div class="testimonial">
                     <div class="testimonial-text">
                         "PowerFit transformó completamente mi approach al fitness. Los entrenadores son increíbles!"
@@ -524,4 +535,5 @@ session_start();
         </div>
     </div>
 </body>
+
 </html>
