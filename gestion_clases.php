@@ -15,14 +15,30 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de clases
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM clases INNER JOIN usuarios ON clases.id_entrenador = usuarios.id WHERE usuarios.rol = 'entrenador'");
+$sqlCount->execute();
+$total_clases = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_clases / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
 // Obtener clases de la base de datos 
-$sql = $conexion->prepare("SELECT clases.id as id_clase,clases.nombre as nombre_clase,clases.descripcion as descripcion_clase,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_entrenador,horario,cupo FROM clases INNER JOIN usuarios ON clases.id_entrenador = usuarios.id WHERE usuarios.rol = 'entrenador'");
+$sql = $conexion->prepare("SELECT clases.id as id_clase,clases.nombre as nombre_clase,clases.descripcion as descripcion_clase,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_entrenador,horario,cupo FROM clases INNER JOIN usuarios ON clases.id_entrenador = usuarios.id WHERE usuarios.rol = 'entrenador' ORDER BY clases.id DESC LIMIT :limit OFFSET :offset");
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $clases = $sql->fetchAll(PDO::FETCH_OBJ);
 
 ?>
-
-
 <style>
     .classes-container {
         background-color: var(--card);
@@ -243,6 +259,7 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
     .no-data i {
         font-size: 4rem;
         margin-bottom: 20px;
+        display: block;
         color: #dee2e6;
     }
 
@@ -381,6 +398,98 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
         background: #5a6268;
     }
 
+    /* Botón principal */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font-main);
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        background-color: var(--secondary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #c0392b;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .classes-container {
@@ -492,6 +601,17 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
                 </tr>
             </thead>
             <tbody>
+                <?php if (empty($clases)): ?>
+                    <tr>
+                        <td colspan="5">
+                            <div class="no-data">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <h3>No hay clases registradas</h3>
+                                <p>Aún no se han registrado clases en el sistema. Puedes agregar una nueva haciendo clic en el botón "Nueva Clase".</p>
+                            </div>
+                        </td>
+                    </tr>
+                <?php else: ?>
                 <?php foreach ($clases as $item) : ?>
                     <tr>
                         <td>
@@ -544,8 +664,45 @@ $clases = $sql->fetchAll(PDO::FETCH_OBJ);
                             </div>
                         </td>
                     <?php endforeach; ?>
+                <?php endif; ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination">
+        <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php
+        $rango = 2;
+        $inicio = max(1, $pagina_actual - $rango);
+        $fin = min($total_paginas, $pagina_actual + $rango);
+
+        if ($inicio > 1) {
+            echo '<a href="?pagina=1">1</a>';
+            if ($inicio > 2) echo '<span class="disabled">...</span>';
+        }
+
+        for ($i = $inicio; $i <= $fin; $i++) {
+            if ($i == $pagina_actual) {
+                echo '<span class="active">' . $i . '</span>';
+            } else {
+                echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+            }
+        }
+
+        if ($fin < $total_paginas) {
+            if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+            echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+        }
+        ?>
+
+        <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+    <div class="pagination-info">
+        Mostrando <?= $total_clases > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_clases) ?> de <?= $total_clases ?> clases | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
     </div>
 
     <script>

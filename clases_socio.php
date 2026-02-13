@@ -33,9 +33,28 @@ $sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
 $sql->execute();
 $clases_socio = $sql->fetchAll(PDO::FETCH_OBJ);
 
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de clases inscritas
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM inscripciones WHERE id_socio = :id_socio AND estado='inscrito'");
+$sqlCount->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sqlCount->execute();
+$total_clases_socio = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_clases_socio / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
 // Obtener el listado de las clases inscritas de ese socio
-$sql = $conexion->prepare("SELECT inscripciones.fecha_inscripcion as fecha_inscripcion,inscripciones.id as id_inscripcion, clases.nombre as nombre_clase, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_entrenador FROM inscripciones INNER JOIN clases ON inscripciones.id_clase = clases.id INNER JOIN usuarios ON clases.id_entrenador=usuarios.id WHERE inscripciones.id_socio = :id_socio AND inscripciones.estado='inscrito'");
+$sql = $conexion->prepare("SELECT inscripciones.fecha_inscripcion as fecha_inscripcion,inscripciones.id as id_inscripcion, clases.nombre as nombre_clase, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_entrenador FROM inscripciones INNER JOIN clases ON inscripciones.id_clase = clases.id INNER JOIN usuarios ON clases.id_entrenador=usuarios.id WHERE inscripciones.id_socio = :id_socio AND inscripciones.estado='inscrito' ORDER BY inscripciones.id DESC LIMIT :limit OFFSET :offset");
 $sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $clases_socio = $sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -629,13 +648,69 @@ $clases_socio = $sql->fetchAll(PDO::FETCH_OBJ);
         color: var(--dark);
     }
 
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
     /* Footer */
     .footer {
+        margin-top: auto;
         background-color: var(--header);
-        color: white;
-        padding: 20px;
+        color: #c2c7d0;
         text-align: center;
-        margin-top: 30px;
+        padding: 15px 20px;
+        font-size: 0.85rem;
     }
 
     /* Responsive */
@@ -821,11 +896,40 @@ $clases_socio = $sql->fetchAll(PDO::FETCH_OBJ);
             <?php } ?>
         </div>
 
-        <!-- Sin clases registradas -->
-        <div id="no-classes" class="no-classes" style="display: none;">
-            <i class="fas fa-calendar-times"></i>
-            <h3>No tienes clases registradas</h3>
-            <p>Selecciona una clase del formulario superior para comenzar.</p>
+        <!-- Paginación -->
+        <div class="pagination">
+            <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+            <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+            <?php
+            $rango = 2;
+            $inicio = max(1, $pagina_actual - $rango);
+            $fin = min($total_paginas, $pagina_actual + $rango);
+
+            if ($inicio > 1) {
+                echo '<a href="?pagina=1">1</a>';
+                if ($inicio > 2) echo '<span class="disabled">...</span>';
+            }
+
+            for ($i = $inicio; $i <= $fin; $i++) {
+                if ($i == $pagina_actual) {
+                    echo '<span class="active">' . $i . '</span>';
+                } else {
+                    echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+                }
+            }
+
+            if ($fin < $total_paginas) {
+                if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+                echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+            }
+            ?>
+
+            <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+            <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+        </div>
+        <div class="pagination-info">
+            Mostrando <?= $total_clases_socio > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_clases_socio) ?> de <?= $total_clases_socio ?> clases | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
         </div>
     </div>
 </div>

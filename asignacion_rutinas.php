@@ -420,12 +420,6 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
 <div class="page-header">
     <h1>Asignar Nueva Rutina a Socio</h1>
 </div>
-
-<div id="alert-message" class="alert">
-    <i class="fas fa-check-circle"></i>
-    <span id="alert-text"></span>
-</div>
-
 <div class="form-container">
     <h2><i class="fas fa-dumbbell"></i> Información de la Rutina</h2>
 

@@ -15,8 +15,26 @@ if (empty($_SESSION['csrf_token'])) {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de socios
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM usuarios WHERE rol='socio'");
+$sqlCount->execute();
+$total_socios = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_socios / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
 // Obtener la lista de socios desde la base de datos (incluye socios sin membresía)
-$sql = $conexion->prepare("SELECT usuarios.id as id_socio,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,usuarios.email as email,usuarios.telefono as telefono,membresias.nombre as membresia FROM usuarios LEFT JOIN membresia_usuario ON membresia_usuario.id_usuario = usuarios.id LEFT JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol='socio'");
+$sql = $conexion->prepare("SELECT usuarios.id as id_socio,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,usuarios.email as email,usuarios.telefono as telefono,membresias.nombre as membresia FROM usuarios LEFT JOIN membresia_usuario ON membresia_usuario.id_usuario = usuarios.id LEFT JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol='socio' ORDER BY usuarios.id DESC LIMIT :limit OFFSET :offset");
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $socios = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
@@ -401,6 +419,71 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
         background: #5a6268;
     }
 
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .members-container {
@@ -510,54 +593,102 @@ $socios = $sql->fetchAll(PDO::FETCH_OBJ);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($socios as $item) { ?>
+                <?php if (empty($socios)) { ?>
                     <tr>
-                        <td>
-                            <div class="member-info">
-                                <div class="member-avatar"><?php echo htmlspecialchars(substr($item->nombre_socio, 0, 2)); ?></div>
-                                <div class="member-details">
-                                    <h4><?php echo htmlspecialchars($item->nombre_socio); ?></h4>
-                                    <p>#SOC-<?php echo htmlspecialchars($item->id_socio); ?></p>
-                                </div>
-                            </div>
-                        </td>
-                        <td><?php echo htmlspecialchars($item->email); ?></td>
-                        <td><?php echo htmlspecialchars($item->telefono); ?></td>
-                        <td>
-                            <?php if ($item->membresia == 'Mensual') { ?>
-                                <span class="membership-badge membership-mensual">Mensual</span>
-                            <?php } elseif ($item->membresia == 'Anual') { ?>
-                                <span class="membership-badge membership-anual">Anual</span>
-                            <?php } elseif ($item->membresia == 'Trimestral') { ?>
-                                <span class="membership-badge membership-trimestral">Trimestral</span>
-                            <?php } elseif ($item->membresia == 'Premium') { ?>
-                                <span class="membership-badge membership-premium">Premium</span>
-                            <?php } else { ?>
-                                <span class="membership-badge membership-none">Sin Membresía</span>
-                            <?php } ?>
-                        </td>
-                        <td>
-                            <?php if (!is_null($item->membresia)) { ?>
-                                <a href="gestion_asistencias_socio.php?id_socio=<?php echo htmlspecialchars($item->id_socio); ?>" class="btn btn-info btn-sm">
-                                    <i class="fas fa-calendar-check"></i> Ver Registro
-                                </a>
-                            <?php } ?>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <form method="post" action="controladores/eliminar_socio.php">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                    <input type="hidden" name="id_socio" value="<?php echo htmlspecialchars($item->id_socio); ?>">
-                                    <button type="submit" class="btn-icon btn-delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                        <td colspan="6">
+                            <div class="no-data">
+                                <i class="fas fa-users-slash"></i>
+                                <h3>No se encontraron socios</h3>
+                                <p>No hay registros de socios para mostrar en este momento.</p>
                             </div>
                         </td>
                     </tr>
+                <?php } else { ?>
+                    <?php foreach ($socios as $item) { ?>
+                        <tr>
+                            <td>
+                                <div class="member-info">
+                                    <div class="member-avatar"><?php echo htmlspecialchars(substr($item->nombre_socio, 0, 2)); ?></div>
+                                    <div class="member-details">
+                                        <h4><?php echo htmlspecialchars($item->nombre_socio); ?></h4>
+                                        <p>#SOC-<?php echo htmlspecialchars($item->id_socio); ?></p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><?php echo htmlspecialchars($item->email); ?></td>
+                            <td><?php echo htmlspecialchars($item->telefono); ?></td>
+                            <td>
+                                <?php if ($item->membresia == 'Mensual') { ?>
+                                    <span class="membership-badge membership-mensual">Mensual</span>
+                                <?php } elseif ($item->membresia == 'Anual') { ?>
+                                    <span class="membership-badge membership-anual">Anual</span>
+                                <?php } elseif ($item->membresia == 'Trimestral') { ?>
+                                    <span class="membership-badge membership-trimestral">Trimestral</span>
+                                <?php } elseif ($item->membresia == 'Premium') { ?>
+                                    <span class="membership-badge membership-premium">Premium</span>
+                                <?php } else { ?>
+                                    <span class="membership-badge membership-none">Sin Membresía</span>
+                                <?php } ?>
+                            </td>
+                            <td>
+                                <?php if (!is_null($item->membresia)) { ?>
+                                    <a href="gestion_asistencias_socio.php?id_socio=<?php echo htmlspecialchars($item->id_socio); ?>" class="btn btn-info btn-sm">
+                                        <i class="fas fa-calendar-check"></i> Ver Registro
+                                    </a>
+                                <?php } ?>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <form method="post" action="controladores/eliminar_socio.php">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                        <input type="hidden" name="id_socio" value="<?php echo htmlspecialchars($item->id_socio); ?>">
+                                        <button type="submit" class="btn-icon btn-delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php } ?>
                 <?php } ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination">
+        <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php
+        $rango = 2;
+        $inicio = max(1, $pagina_actual - $rango);
+        $fin = min($total_paginas, $pagina_actual + $rango);
+
+        if ($inicio > 1) {
+            echo '<a href="?pagina=1">1</a>';
+            if ($inicio > 2) echo '<span class="disabled">...</span>';
+        }
+
+        for ($i = $inicio; $i <= $fin; $i++) {
+            if ($i == $pagina_actual) {
+                echo '<span class="active">' . $i . '</span>';
+            } else {
+                echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+            }
+        }
+
+        if ($fin < $total_paginas) {
+            if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+            echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+        }
+        ?>
+
+        <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+    <div class="pagination-info">
+        Mostrando <?= $total_socios > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_socios) ?> de <?= $total_socios ?> socios | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
     </div>
 
     <script>

@@ -11,16 +11,30 @@ include_once "conexion/bd.php";
 
 $id_socio = $_SESSION['id_usuario']; // id del socio logueado
 
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Cantidad de rutinas asignadas a ese usuario
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM rutinas WHERE id_socio = :id_socio");
+$sqlCount->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sqlCount->execute();
+$cantidad_rutinas = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($cantidad_rutinas / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
 // Obtener rutina del socio
-$sql = $conexion->prepare("SELECT rutinas.descripcion as descripcion,rutinas.fecha_asignacion as fecha_asignacion,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_entrenador FROM rutinas INNER JOIN usuarios ON rutinas.id_entrenador=usuarios.id WHERE rutinas.id_socio = :id_socio");
+$sql = $conexion->prepare("SELECT rutinas.descripcion as descripcion,rutinas.fecha_asignacion as fecha_asignacion,CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_entrenador FROM rutinas INNER JOIN usuarios ON rutinas.id_entrenador=usuarios.id WHERE rutinas.id_socio = :id_socio ORDER BY rutinas.fecha_asignacion DESC LIMIT :limit OFFSET :offset");
 $sql->bindParam(':id_socio', $id_socio, PDO::PARAM_INT);
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
-
 $rutinas = $sql->fetchAll(PDO::FETCH_OBJ);
-
-
-// Cantidad de rutinas asigandas a ese usuario
-$cantidad_rutinas = count($rutinas);
 ?>
 
 <style>
@@ -192,6 +206,71 @@ $cantidad_rutinas = count($rutinas);
         font-family: var(--font-main);
     }
 
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
+    }
+
     @media (max-width: 768px) {
         .filters {
             flex-direction: column;
@@ -277,6 +356,42 @@ $cantidad_rutinas = count($rutinas);
                 </table>
             </div>
         <?php } ?>
+
+        <!-- Paginación -->
+        <div class="pagination">
+            <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+            <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+            <?php
+            $rango = 2;
+            $inicio = max(1, $pagina_actual - $rango);
+            $fin = min($total_paginas, $pagina_actual + $rango);
+
+            if ($inicio > 1) {
+                echo '<a href="?pagina=1">1</a>';
+                if ($inicio > 2) echo '<span class="disabled">...</span>';
+            }
+
+            for ($i = $inicio; $i <= $fin; $i++) {
+                if ($i == $pagina_actual) {
+                    echo '<span class="active">' . $i . '</span>';
+                } else {
+                    echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+                }
+            }
+
+            if ($fin < $total_paginas) {
+                if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+                echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+            }
+            ?>
+
+            <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+            <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+        </div>
+        <div class="pagination-info">
+            Mostrando <?= $cantidad_rutinas > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $cantidad_rutinas) ?> de <?= $cantidad_rutinas ?> rutinas | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
+        </div>
     </div>
 </div>
 

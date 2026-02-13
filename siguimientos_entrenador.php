@@ -9,15 +9,28 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'entrenador') {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
-// Obtener todos los usuarios con rol de socio
-$sql = $conexion->prepare("SELECT usuarios.id as id_socio, usuarios.email as email_socio, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ");
-$sql->execute();
-$socios = $sql->fetchAll(PDO::FETCH_OBJ);
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
 
 // Obtener cantidad de usuarios con rol de socio
-$sql = $conexion->prepare("SELECT COUNT(*) as cantidad FROM usuarios WHERE rol = 'socio'");
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id WHERE usuarios.rol = 'socio'");
+$sqlCount->execute();
+$cantidad_socios = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($cantidad_socios / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
+// Obtener todos los usuarios con rol de socio
+$sql = $conexion->prepare("SELECT usuarios.id as id_socio, usuarios.email as email_socio, CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ORDER BY usuarios.id DESC LIMIT :limit OFFSET :offset");
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
-$cantidad_socios = $sql->fetchColumn();
+$socios = $sql->fetchAll(PDO::FETCH_OBJ);
 ?>
 <style>
     :root {
@@ -622,43 +635,64 @@ $cantidad_socios = $sql->fetchColumn();
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 10px;
-        margin-top: 30px;
+        gap: 5px;
+        margin-top: 20px;
         flex-wrap: wrap;
     }
 
-    .pagination-btn {
-        padding: 10px 15px;
-        border: 1px solid #ddd;
-        background-color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-weight: 600;
-        color: var(--dark);
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
         text-decoration: none;
-    }
-
-    .pagination-btn:hover:not(.disabled) {
-        background-color: var(--accent);
-        color: white;
-        border-color: var(--accent);
-    }
-
-    .pagination-btn.active {
-        background-color: var(--accent);
-        color: white;
-        border-color: var(--accent);
-    }
-
-    .pagination-btn.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-info {
         font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
         color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
     }
 
     /* Responsive */
@@ -835,13 +869,38 @@ $cantidad_socios = $sql->fetchColumn();
 
     <!-- Paginación -->
     <div class="pagination">
-        <button class="pagination-btn" id="prev-page" disabled>
-            <i class="fas fa-chevron-left"></i> Anterior
-        </button>
-        <span class="page-info" id="page-info">Página 1 de 1</span>
-        <button class="pagination-btn" id="next-page" disabled>
-            Siguiente <i class="fas fa-chevron-right"></i>
-        </button>
+        <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php
+        $rango = 2;
+        $inicio = max(1, $pagina_actual - $rango);
+        $fin = min($total_paginas, $pagina_actual + $rango);
+
+        if ($inicio > 1) {
+            echo '<a href="?pagina=1">1</a>';
+            if ($inicio > 2) echo '<span class="disabled">...</span>';
+        }
+
+        for ($i = $inicio; $i <= $fin; $i++) {
+            if ($i == $pagina_actual) {
+                echo '<span class="active">' . $i . '</span>';
+            } else {
+                echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+            }
+        }
+
+        if ($fin < $total_paginas) {
+            if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+            echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+        }
+        ?>
+
+        <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+    <div class="pagination-info">
+        Mostrando <?= $cantidad_socios > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $cantidad_socios) ?> de <?= $cantidad_socios ?> socios | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
     </div>
 </div>
 
@@ -901,39 +960,6 @@ $cantidad_socios = $sql->fetchColumn();
         document.getElementById('progress-count').textContent = progressCount;
     }
 
-    // Actualizar controles de paginación
-    function actualizarPaginacion() {
-        const totalPages = Math.ceil(filteredSocios.length / itemsPerPage);
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const pageInfo = document.getElementById('page-info');
 
-        // Actualizar estado de botones
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.classList.toggle('disabled', currentPage === 1);
-
-        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-        nextBtn.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
-
-        // Actualizar información de página
-        pageInfo.textContent = totalPages === 0 ? 'Sin resultados' : `Página ${currentPage} de ${totalPages}`;
-    }
-
-    // Navegar a página anterior
-    document.getElementById('prev-page').addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderSocios();
-        }
-    });
-
-    // Navegar a página siguiente
-    document.getElementById('next-page').addEventListener('click', function() {
-        const totalPages = Math.ceil(filteredSocios.length / itemsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderSocios();
-        }
-    });
 </script>
 <?php require_once 'templates/footer.php'; ?>

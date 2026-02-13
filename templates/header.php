@@ -46,6 +46,9 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             --card: #ffffff;
             --font-main: 'Montserrat', sans-serif;
             --font-secondary: 'Open Sans', sans-serif;
+            --weight: #2980b9;
+            --fat: #e74c3c;
+            --muscle: #27ae60;
         }
 
         * {
@@ -324,19 +327,6 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             font-weight: 600;
         }
 
-        .metric-trend {
-            font-size: 0.8rem;
-            margin-top: 5px;
-        }
-
-        .trend-up {
-            color: var(--success);
-        }
-
-        .trend-down {
-            color: var(--secondary);
-        }
-
         .bg-primary {
             background-color: var(--primary);
         }
@@ -385,56 +375,6 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             font-family: var(--font-main);
         }
 
-        .chart-wrapper {
-            height: 300px;
-            position: relative;
-        }
-
-        .activity-list {
-            list-style: none;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .activity-info h4 {
-            font-size: 0.95rem;
-            margin-bottom: 3px;
-            color: var(--dark);
-        }
-
-        .activity-info p {
-            font-size: 0.8rem;
-            color: var(--primary);
-            margin: 0;
-        }
-
-        .activity-time {
-            font-size: 0.7rem;
-            color: #6c757d;
-        }
-
-        /* Quick Actions */
         .actions-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -471,24 +411,6 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             font-weight: 600;
         }
 
-        /* Tabla de Miembros */
-        .members-table {
-            background-color: var(--card);
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .members-table h2 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            color: var(--dark);
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            font-family: var(--font-main);
-        }
-
         .table {
             width: 100%;
             border-collapse: collapse;
@@ -512,23 +434,6 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             background-color: #f8f9fa;
         }
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
         /* Footer */
         .footer {
             background-color: var(--header);
@@ -536,6 +441,62 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
             padding: 20px;
             text-align: center;
             margin-top: auto;
+            width: 100%;
+        }
+
+        /* Paginación Estándar */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .pagination-btn {
+            padding: 10px 18px;
+            border: 1px solid #dee2e6;
+            background-color: white;
+            color: var(--dark);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background-color: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f8f9fa;
+            color: #adb5bd;
+        }
+
+        .page-info {
+            font-size: 0.95rem;
+            color: var(--primary);
+            font-weight: 600;
+            font-family: var(--font-main);
+            padding: 0 15px;
         }
 
         /* Responsive */
@@ -576,6 +537,18 @@ $membresia_socio = $sql->fetch(PDO::FETCH_OBJ);
 
             .header-title {
                 display: none;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .pagination {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .pagination-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>

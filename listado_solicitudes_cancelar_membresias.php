@@ -10,8 +10,26 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de solicitudes para paginación
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM solicitud_cancelacion");
+$sqlCount->execute();
+$total_solicitudes = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_solicitudes / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
 // Obtener lista de solicitudes de cancelación de membresías
-$sql = $conexion->prepare("SELECT solicitud_cancelacion.id as id_solicitud, solicitud_cancelacion.estado as estado, solicitud_cancelacion.motivo as motivo, solicitud_cancelacion.fecha_solicitud as fecha_solicitud,CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio, membresias.nombre as nombre_membresia FROM solicitud_cancelacion INNER JOIN membresia_usuario ON solicitud_cancelacion.id_membresia_usuario=membresia_usuario.id INNER JOIN usuarios ON membresia_usuario.id_usuario=usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia=membresias.id");
+$sql = $conexion->prepare("SELECT solicitud_cancelacion.id as id_solicitud, solicitud_cancelacion.estado as estado, solicitud_cancelacion.motivo as motivo, solicitud_cancelacion.fecha_solicitud as fecha_solicitud,CONCAT(usuarios.nombre, ' ', usuarios.apellido) as nombre_socio, membresias.nombre as nombre_membresia FROM solicitud_cancelacion INNER JOIN membresia_usuario ON solicitud_cancelacion.id_membresia_usuario=membresia_usuario.id INNER JOIN usuarios ON membresia_usuario.id_usuario=usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia=membresias.id ORDER BY solicitud_cancelacion.id DESC LIMIT :limit OFFSET :offset");
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $solicitudes = $sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -713,19 +731,25 @@ $cantidad_solicitudes_aprobadas = $sql->fetch(PDO::FETCH_OBJ);
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 10px;
-        margin-top: 30px;
+        gap: 5px;
+        margin-top: 20px;
         flex-wrap: wrap;
     }
 
     .pagination-btn {
-        padding: 10px 15px;
-        border: 1px solid #ddd;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid #dee2e6;
         background-color: white;
-        border-radius: 6px;
+        border-radius: 5px;
         cursor: pointer;
         transition: all 0.3s;
         font-weight: 600;
+        font-size: 0.9rem;
         color: var(--dark);
         text-decoration: none;
     }
@@ -737,19 +761,31 @@ $cantidad_solicitudes_aprobadas = $sql->fetch(PDO::FETCH_OBJ);
     }
 
     .pagination-btn.active {
-        background-color: var(--accent);
+        background-color: var(--secondary);
         color: white;
-        border-color: var(--accent);
+        border-color: var(--secondary);
+        pointer-events: none;
     }
 
     .pagination-btn.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
     }
 
     .page-info {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
     }
 
     /* Sin resultados */
@@ -1098,36 +1134,48 @@ $cantidad_solicitudes_aprobadas = $sql->fetch(PDO::FETCH_OBJ);
                 </tr>
             </thead>
             <tbody id="requests-body">
-                <?php foreach ($solicitudes as $item): ?>
+                <?php if (empty($solicitudes)): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($item->nombre_socio); ?></td>
-                        <td><?php echo htmlspecialchars($item->nombre_membresia); ?></td>
-                        <td><?php echo htmlspecialchars($item->motivo); ?></td>
-                        <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($item->fecha_solicitud))); ?></td>
-                        <td>
-                            <?php
-                            $estadoClass = '';
-                            if ($item->estado == 'pendiente') {
-                                $estadoClass = 'estado-pendiente';
-                            } elseif ($item->estado == 'procesada' || $item->estado == 'aprobada') {
-                                $estadoClass = 'estado-procesada';
-                            } elseif ($item->estado == 'rechazada') {
-                                $estadoClass = 'estado-rechazada';
-                            }
-                            ?>
-                            <span class="estado-badge <?php echo $estadoClass; ?>">
-                                <?php echo htmlspecialchars(ucfirst($item->estado)); ?>
-                            </span>
-                        </td>
-                        <td>
-                            <?php if ($item->estado == 'pendiente'): ?>
-                                <a href="editar_solicitud_cancelar_membresia_socio.php?id_solicitud=<?php echo $item->id_solicitud; ?>" class="action-btn btn-aceptar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                            <?php endif; ?>
+                        <td colspan="6">
+                            <div class="no-results">
+                                <i class="fas fa-inbox"></i>
+                                <h3>No hay solicitudes de cancelación</h3>
+                                <p>Aún no se han registrado solicitudes de cancelación de membresías en el sistema.</p>
+                            </div>
                         </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php else: ?>
+                    <?php foreach ($solicitudes as $item): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($item->nombre_socio); ?></td>
+                            <td><?php echo htmlspecialchars($item->nombre_membresia); ?></td>
+                            <td><?php echo htmlspecialchars($item->motivo); ?></td>
+                            <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($item->fecha_solicitud))); ?></td>
+                            <td>
+                                <?php
+                                $estadoClass = '';
+                                if ($item->estado == 'pendiente') {
+                                    $estadoClass = 'estado-pendiente';
+                                } elseif ($item->estado == 'procesada' || $item->estado == 'aprobada') {
+                                    $estadoClass = 'estado-procesada';
+                                } elseif ($item->estado == 'rechazada') {
+                                    $estadoClass = 'estado-rechazada';
+                                }
+                                ?>
+                                <span class="estado-badge <?php echo $estadoClass; ?>">
+                                    <?php echo htmlspecialchars(ucfirst($item->estado)); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($item->estado == 'pendiente'): ?>
+                                    <a href="editar_solicitud_cancelar_membresia_socio.php?id_solicitud=<?php echo $item->id_solicitud; ?>" class="action-btn btn-aceptar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -1141,58 +1189,44 @@ $cantidad_solicitudes_aprobadas = $sql->fetch(PDO::FETCH_OBJ);
 
     <!-- Paginación -->
     <div class="pagination">
-        <button class="pagination-btn" id="prev-page" disabled>
-            <i class="fas fa-chevron-left"></i> Anterior
-        </button>
-        <span class="page-info" id="page-info">Página 1 de 1</span>
-        <button class="pagination-btn" id="next-page" disabled>
-            Siguiente <i class="fas fa-chevron-right"></i>
-        </button>
+        <a href="?pagina=1" class="pagination-btn <?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="?pagina=<?= $pagina_actual - 1 ?>" class="pagination-btn <?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php
+        $rango = 2;
+        $inicio = max(1, $pagina_actual - $rango);
+        $fin = min($total_paginas, $pagina_actual + $rango);
+
+        if ($inicio > 1) {
+            echo '<a href="?pagina=1" class="pagination-btn">1</a>';
+            if ($inicio > 2) echo '<span class="pagination-btn disabled">...</span>';
+        }
+
+        for ($i = $inicio; $i <= $fin; $i++) {
+            if ($i == $pagina_actual) {
+                echo '<span class="pagination-btn active">' . $i . '</span>';
+            } else {
+                echo '<a href="?pagina=' . $i . '" class="pagination-btn">' . $i . '</a>';
+            }
+        }
+
+        if ($fin < $total_paginas) {
+            if ($fin < $total_paginas - 1) echo '<span class="pagination-btn disabled">...</span>';
+            echo '<a href="?pagina=' . $total_paginas . '" class="pagination-btn">' . $total_paginas . '</a>';
+        }
+        ?>
+
+        <a href="?pagina=<?= $pagina_actual + 1 ?>" class="pagination-btn <?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="?pagina=<?= $total_paginas ?>" class="pagination-btn <?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+    <div class="page-info" style="text-align:center; margin-top:10px;">
+        Mostrando <?= $total_solicitudes > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_solicitudes) ?> de <?= $total_solicitudes ?> solicitudes | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
     </div>
 </div>
 
 
 <script>
-    // Variables de paginación
-    let currentPage = 1;
-    const itemsPerPage = 5;
-    let filteredSolicitudes = [...solicitudesData];
     let currentSolicitudId = null;
-
-    // Actualizar controles de paginación
-    function actualizarPaginacion() {
-        const totalPages = Math.ceil(filteredSolicitudes.length / itemsPerPage);
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const pageInfo = document.getElementById('page-info');
-
-        // Actualizar estado de botones
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.classList.toggle('disabled', currentPage === 1);
-
-        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
-        nextBtn.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
-
-        // Actualizar información de página
-        pageInfo.textContent = totalPages === 0 ? 'Sin resultados' : `Página ${currentPage} de ${totalPages}`;
-    }
-
-    // Navegar a página anterior
-    document.getElementById('prev-page').addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderSolicitudes();
-        }
-    });
-
-    // Navegar a página siguiente
-    document.getElementById('next-page').addEventListener('click', function() {
-        const totalPages = Math.ceil(filteredSolicitudes.length / itemsPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderSolicitudes();
-        }
-    });
 
     // Abrir modal para cambiar estado
     function openChangeStatusModal(solicitudId, action) {

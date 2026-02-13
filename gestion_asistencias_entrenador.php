@@ -18,9 +18,28 @@ if (empty($id_entrenador) || !is_numeric($id_entrenador) || $id_entrenador <= 0)
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
-// Obntener registro de asistencias del entrenador
-$sql = $conexion->prepare("SELECT fecha, hora_entrada, hora_salida FROM asistencia WHERE id_usuario = :id_entrenador ORDER BY fecha DESC, hora_entrada DESC");
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de asistencias del entrenador
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM asistencia WHERE id_usuario = :id_entrenador");
+$sqlCount->bindParam(':id_entrenador', $id_entrenador, PDO::PARAM_INT);
+$sqlCount->execute();
+$total_asistencias = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_asistencias / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
+// Obtener registro de asistencias del entrenador
+$sql = $conexion->prepare("SELECT fecha, hora_entrada, hora_salida FROM asistencia WHERE id_usuario = :id_entrenador ORDER BY fecha DESC, hora_entrada DESC LIMIT :limit OFFSET :offset");
 $sql->bindParam(':id_entrenador', $id_entrenador, PDO::PARAM_INT);
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $asistencias = $sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -435,6 +454,71 @@ $promedioHoras = ($diasContados > 0) ? round($totalHoras / $diasContados, 2) : 0
         margin-bottom: 20px;
     }
 
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .attendance-container {
@@ -544,41 +628,89 @@ $promedioHoras = ($diasContados > 0) ? round($totalHoras / $diasContados, 2) : 0
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($asistencias as $item) { ?>
+                <?php if (empty($asistencias)) { ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($item->fecha); ?></td>
-                        <td class="time-cell time-in"><?php echo htmlspecialchars($item->hora_entrada); ?></td>
-                        <td class="time-cell time-out">
-                            <?php if ($item->hora_salida) { ?>
-                                <?php echo htmlspecialchars($item->hora_salida); ?>
-                            <?php } else { ?>
-                                -
-                            <?php } ?>
-                        </td>
-                        </td>
-                        <td class="duration">
-                            <?php
-                            if ($item->hora_salida) {
-                                $entrada = new DateTime($item->hora_entrada);
-                                $salida = new DateTime($item->hora_salida);
-                                $intervalo = $entrada->diff($salida);
-                                echo $intervalo->format('%hh %im');
-                            } else {
-                                echo 'En curso';
-                            }
-                            ?>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn-icon btn-view" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
+                        <td colspan="5">
+                            <div class="no-data">
+                                <i class="fas fa-calendar-times"></i>
+                                <h3>Sin registros de asistencia</h3>
+                                <p>Este entrenador aún no tiene registros de asistencia en el sistema.</p>
                             </div>
                         </td>
                     </tr>
+                <?php } else { ?>
+                    <?php foreach ($asistencias as $item) { ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($item->fecha); ?></td>
+                            <td class="time-cell time-in"><?php echo htmlspecialchars($item->hora_entrada); ?></td>
+                            <td class="time-cell time-out">
+                                <?php if ($item->hora_salida) { ?>
+                                    <?php echo htmlspecialchars($item->hora_salida); ?>
+                                <?php } else { ?>
+                                    -
+                                <?php } ?>
+                            </td>
+                            <td class="duration">
+                                <?php
+                                if ($item->hora_salida) {
+                                    $entrada = new DateTime($item->hora_entrada);
+                                    $salida = new DateTime($item->hora_salida);
+                                    $intervalo = $entrada->diff($salida);
+                                    echo $intervalo->format('%hh %im');
+                                } else {
+                                    echo 'En curso';
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php } ?>
                 <?php } ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Paginación -->
+    <?php $base_url = "?id_entrenador=" . urlencode($id_entrenador); ?>
+    <div class="pagination">
+        <a href="<?= $base_url ?>&pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+        <a href="<?= $base_url ?>&pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+        <?php
+        $rango = 2;
+        $inicio = max(1, $pagina_actual - $rango);
+        $fin = min($total_paginas, $pagina_actual + $rango);
+
+        if ($inicio > 1) {
+            echo '<a href="' . $base_url . '&pagina=1">1</a>';
+            if ($inicio > 2) echo '<span class="disabled">...</span>';
+        }
+
+        for ($i = $inicio; $i <= $fin; $i++) {
+            if ($i == $pagina_actual) {
+                echo '<span class="active">' . $i . '</span>';
+            } else {
+                echo '<a href="' . $base_url . '&pagina=' . $i . '">' . $i . '</a>';
+            }
+        }
+
+        if ($fin < $total_paginas) {
+            if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+            echo '<a href="' . $base_url . '&pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+        }
+        ?>
+
+        <a href="<?= $base_url ?>&pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+        <a href="<?= $base_url ?>&pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+    </div>
+    <div class="pagination-info">
+        Mostrando <?= $total_asistencias > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_asistencias) ?> de <?= $total_asistencias ?> asistencias | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
     </div>
 </div>
 </div>

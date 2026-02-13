@@ -15,8 +15,26 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
 require_once "templates/header.php";
 include_once "conexion/bd.php";
 
-// Obtener los pago desde la base de datos
-$sql=$conexion->prepare("SELECT pagos.id as id_pago, usuarios.id as id_socio, CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia,monto,fecha_pago,metodo_pago FROM pagos INNER JOIN usuarios ON pagos.id_usuario = usuarios.id INNER JOIN membresias ON pagos.id_membresia = membresias.id ORDER BY fecha_pago DESC");
+// Paginación
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Contar total de pagos registrados
+$sqlCount = $conexion->prepare("SELECT COUNT(*) FROM pagos");
+$sqlCount->execute();
+$total_registros_pagos = $sqlCount->fetchColumn();
+$total_paginas = max(1, ceil($total_registros_pagos / $registros_por_pagina));
+
+if ($pagina_actual > $total_paginas) {
+    $pagina_actual = $total_paginas;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
+}
+
+// Obtener los pagos desde la base de datos
+$sql=$conexion->prepare("SELECT pagos.id as id_pago, usuarios.id as id_socio, CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre_socio,membresias.nombre as nombre_membresia,monto,fecha_pago,metodo_pago FROM pagos INNER JOIN usuarios ON pagos.id_usuario = usuarios.id INNER JOIN membresias ON pagos.id_membresia = membresias.id ORDER BY fecha_pago DESC LIMIT :limit OFFSET :offset");
+$sql->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$sql->bindValue(':offset', $offset, PDO::PARAM_INT);
 $sql->execute();
 $pagos=$sql->fetchAll(PDO::FETCH_OBJ);
 
@@ -317,6 +335,71 @@ foreach ($pagosPorMes as $pago) {
         background-color: #218838;
     }
 
+    /* Paginación */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: var(--font-main);
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+        color: var(--dark);
+        background: white;
+    }
+
+    .pagination a:hover {
+        background-color: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .pagination .active {
+        background-color: var(--secondary);
+        color: white;
+        border-color: var(--secondary);
+        pointer-events: none;
+    }
+
+    .pagination .disabled {
+        color: #adb5bd;
+        pointer-events: none;
+        background: #f8f9fa;
+    }
+
+    .pagination-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Footer fijo */
+    .footer {
+        margin-top: auto;
+        background-color: var(--header);
+        color: #c2c7d0;
+        text-align: center;
+        padding: 15px 20px;
+        font-size: 0.85rem;
+    }
+
     /* Responsive específico para pagos */
     @media (max-width: 768px) {
         .payments-container {
@@ -414,6 +497,17 @@ foreach ($pagosPorMes as $pago) {
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if (empty($pagos)): ?>
+                    <tr>
+                        <td colspan="6">
+                            <div style="text-align:center;padding:60px 20px;color:#6c757d;">
+                                <i class="fas fa-file-invoice-dollar" style="font-size:4rem;display:block;margin-bottom:15px;color:#dee2e6;"></i>
+                                <h3 style="font-size:1.3rem;margin-bottom:10px;color:#495057;font-family:var(--font-main);">No hay pagos registrados</h3>
+                                <p style="font-size:0.9rem;max-width:400px;margin:0 auto;">Aún no se han registrado pagos en el sistema.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php else: ?>
                     <?php foreach ($pagos as $item) { ?>
                     <tr>
                         <td>
@@ -457,8 +551,45 @@ foreach ($pagosPorMes as $pago) {
                         </td>
                     </tr>
                     <?php } ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="pagination">
+            <a href="?pagina=1" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-double-left"></i></a>
+            <a href="?pagina=<?= $pagina_actual - 1 ?>" class="<?= $pagina_actual <= 1 ? 'disabled' : '' ?>"><i class="fas fa-angle-left"></i></a>
+
+            <?php
+            $rango = 2;
+            $inicio = max(1, $pagina_actual - $rango);
+            $fin = min($total_paginas, $pagina_actual + $rango);
+
+            if ($inicio > 1) {
+                echo '<a href="?pagina=1">1</a>';
+                if ($inicio > 2) echo '<span class="disabled">...</span>';
+            }
+
+            for ($i = $inicio; $i <= $fin; $i++) {
+                if ($i == $pagina_actual) {
+                    echo '<span class="active">' . $i . '</span>';
+                } else {
+                    echo '<a href="?pagina=' . $i . '">' . $i . '</a>';
+                }
+            }
+
+            if ($fin < $total_paginas) {
+                if ($fin < $total_paginas - 1) echo '<span class="disabled">...</span>';
+                echo '<a href="?pagina=' . $total_paginas . '">' . $total_paginas . '</a>';
+            }
+            ?>
+
+            <a href="?pagina=<?= $pagina_actual + 1 ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-right"></i></a>
+            <a href="?pagina=<?= $total_paginas ?>" class="<?= $pagina_actual >= $total_paginas ? 'disabled' : '' ?>"><i class="fas fa-angle-double-right"></i></a>
+        </div>
+        <div class="pagination-info">
+            Mostrando <?= $total_registros_pagos > 0 ? $offset + 1 : 0 ?>-<?= min($offset + $registros_por_pagina, $total_registros_pagos) ?> de <?= $total_registros_pagos ?> pagos | Página <?= $pagina_actual ?> de <?= $total_paginas ?>
         </div>
 
         <!-- Sección de Total -->
