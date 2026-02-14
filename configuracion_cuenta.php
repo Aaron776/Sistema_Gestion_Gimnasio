@@ -7,10 +7,9 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Verificar que tenga rol de socio, entrenador o administrador
-// Verificar que tenga rol de socio, entrenador o administrador
 $roles_permitidos = ['socio', 'entrenador', 'admin'];
 if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], $roles_permitidos)) {
-    header("Location: index.php"); // si no lo mandamos al login
+    header("Location: acceso_denegado.php"); // si no lo mandamos al acceso denegado
     exit();
 }
 require_once "templates/header.php";

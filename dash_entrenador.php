@@ -3,7 +3,7 @@
 
     // Verificar que tenga rol de entrenador
     if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'entrenador') {
-        header("Location: index.php"); // si no lo mandamos al login
+        header("Location: acceso_denegado.php"); // si no lo mandamos al acceso denegado
         exit();
     }
     require_once "templates/header.php";

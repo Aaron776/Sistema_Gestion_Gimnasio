@@ -3,7 +3,7 @@ require_once "autorizacion/auth.php"; // valida login y arranca sesión
 
 // Verificar que tenga rol de admin
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
-    header("Location: index.php"); // si no lo mandamos al login
+    header("Location: acceso_denegado.php"); // si no lo mandamos al acceso denegado
     exit();
 }
 require_once "templates/header.php";
@@ -147,27 +147,52 @@ if (empty($dataIngresos)) {
                     <canvas id="membershipChart"></canvas>
                 </div>
             </div>
-            
-            <div class="members-table">
-                <h2>Socios Recientes</h2>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Email</th>
-                            <th>Membresía</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($sociosRecientes as $socio): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($socio->nombre); ?></td>
-                            <td><?= htmlspecialchars($socio->email); ?></td>
-                            <td><?= htmlspecialchars($socio->membresia); ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+
+            <!-- Tabla de Socios Recientes -->
+            <div class="recent-members">
+                <div class="section-header">
+                    <h3>Socios Recientes</h3>
+                    <a href="gestion_socios.php" class="btn btn-sm btn-primary">Ver Todos</a>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Plan</th>
+                                <th>Fecha Registro</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($sociosRecientes as $socio): // Assuming $ultimos_socios should be $sociosRecientes based on context 
+                            ?>
+                                <tr>
+                                    <td>
+                                        <div class="member-info">
+                                            <!-- <img src="assets/img/avatar.png" alt="Avatar" class="member-avatar"> -->
+                                            <div>
+                                                <span class="member-name"><?php echo htmlspecialchars($socio->nombre); ?></span>
+                                                <span class="member-email"><?php echo htmlspecialchars($socio->email); ?></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-plan"><?php echo htmlspecialchars(ucfirst($socio->membresia)); ?></span></td>
+                                    <td><?php echo date('d/m/Y', strtotime($socio->fecha_registro)); ?></td>
+                                    <td>
+                                        <?php // Assuming a 'status' or 'estado' property might be added to $socio later, for now, using a placeholder or adapting 
+                                        ?>
+                                        <?php if (isset($socio->estado) && $socio->estado == 'activo'): ?>
+                                            <span class="status-indicator status-active">Activo</span>
+                                        <?php else: ?>
+                                            <span class="status-indicator status-inactive">Inactivo</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -205,147 +230,147 @@ if (empty($dataIngresos)) {
 </div>
 
 <script>
-// Gráfico de Distribución de Membresías (Gráfico de Dona)
-const membershipCtx = document.getElementById('membershipChart').getContext('2d');
-const membershipChart = new Chart(membershipCtx, {
-    type: 'doughnut',
-    data: {
-        labels: <?php echo json_encode($labelsMembresias); ?>,
-        datasets: [{
-            data: <?php echo json_encode($dataMembresias); ?>,
-            backgroundColor: <?php echo json_encode(array_slice($colorsMembresias, 0, count($labelsMembresias))); ?>,
-            borderColor: '#ffffff',
-            borderWidth: 2,
-            hoverOffset: 15
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    padding: 20,
-                    usePointStyle: true,
-                    font: {
-                        size: 12
-                    }
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        let label = context.label || '';
-                        if (label) {
-                            label += ': ';
-                        }
-                        label += context.raw + ' socios';
-                        return label;
-                    }
-                }
-            }
-        }
-    }
-});
-
-// Gráfico de Ingresos (Gráfico de Línea)
-const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-const revenueChart = new Chart(revenueCtx, {
-    type: 'line',
-    data: {
-        labels: <?php echo json_encode($labelsMeses); ?>,
-        datasets: [{
-            label: 'Ingresos ($)',
-            data: <?php echo json_encode($dataIngresos); ?>,
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
-            pointRadius: 6,
-            pointHoverRadius: 8
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: {
-                    drawBorder: false
-                },
-                ticks: {
-                    callback: function(value) {
-                        return '$' + value;
-                    }
-                }
-            },
-            x: {
-                grid: {
-                    display: false
-                }
-            }
+    // Gráfico de Distribución de Membresías (Gráfico de Dona)
+    const membershipCtx = document.getElementById('membershipChart').getContext('2d');
+    const membershipChart = new Chart(membershipCtx, {
+        type: 'doughnut',
+        data: {
+            labels: <?php echo json_encode($labelsMembresias); ?>,
+            datasets: [{
+                data: <?php echo json_encode($dataMembresias); ?>,
+                backgroundColor: <?php echo json_encode(array_slice($colorsMembresias, 0, count($labelsMembresias))); ?>,
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                hoverOffset: 15
+            }]
         },
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                    font: {
-                        size: 14
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
                     }
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return 'Ingresos: $' + context.raw;
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.raw + ' socios';
+                            return label;
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
+
+    // Gráfico de Ingresos (Gráfico de Línea)
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: <?php echo json_encode($labelsMeses); ?>,
+            datasets: [{
+                label: 'Ingresos ($)',
+                data: <?php echo json_encode($dataIngresos); ?>,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Ingresos: $' + context.raw;
+                        }
+                    }
+                }
+            }
+        }
+    });
 </script>
 
 <style>
-.chart-container {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-.chart-wrapper {
-    position: relative;
-    height: 300px;
-    width: 100%;
-}
+    .chart-wrapper {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
 
-.chart-container h2 {
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 18px;
-}
+    .chart-container h2 {
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 18px;
+    }
 
-.members-table {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
+    .members-table {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-.members-table h2 {
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 18px;
-}
+    .members-table h2 {
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 18px;
+    }
 </style>
 <?php
 require_once 'templates/footer.php';

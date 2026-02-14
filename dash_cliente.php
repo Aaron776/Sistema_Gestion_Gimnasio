@@ -3,7 +3,7 @@ require_once "autorizacion/auth.php"; // valida login y arranca sesión
 
 // Verificar que tenga rol de socio
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'socio') {
-    header("Location: index.php"); // si no lo mandamos al login
+    header("Location: acceso_denegado.php"); // si no lo mandamos al acceso denegado
     exit();
 }
 require_once "templates/header.php";
@@ -813,79 +813,81 @@ foreach ($datos_grafico as $registro) {
                 <h3><i class="fas fa-history"></i> Progreso Reciente</h3>
                 <a href="mi-progreso.html" class="view-all">Ver histórico</a>
             </div>
-            <table class="progress-table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Peso</th>
-                        <th>Grasa</th>
-                        <th>Músculo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    // [PASO 2] GENERAR TABLA DE PROGRESO
-                    // Iteramos sobre el historial obtenido.
-                    // $historial_progreso ya está ordenado del más reciente al más antiguo.
-                    foreach ($historial_progreso as $index => $registro):
-                        // Lógica para comparar con el registro anterior (que en este array ordenado DESC es el siguiente elemento)
-                        // para determinar si hubo subida o bajada.
-                        $prev_registro = isset($historial_progreso[$index + 1]) ? $historial_progreso[$index + 1] : null;
-
-                        // Iconos de tendencia
-                        $trend_down = '<div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>';
-                        $trend_up = '<div class="trend-indicator"><i class="fas fa-arrow-up trend-up"></i></div>';
-
-                        // Determinar tendencia (Peso: bajar es bueno/verde? Depende. Asumiremos visualización simple: Arriba=Rojo/Verde según contexto?)
-                        // Para simplificar: Arriba=Flecha Arriba, Abajo=Flecha Abajo. Colores: Up=Success(verde)? No siempre.
-                        // Usaremos la convención visual: 
-                        // Peso: si baja -> flecha abajo verde (trend-down es rojo en CSS, ajustaremos si es necesario o usaremos clases standard).
-                        // Vamos a usar colores neutros o clases existentes. En la plantilla original:
-                        // "trend-down" tiene color danger(rojo), "trend-up" tiene color success(verde).
-                        // Generalmente bajar peso y grasa es "bueno" -> verde, subir músculo es "bueno" -> verde.
-                        // Pero la clase "trend-down" es roja. Vamos a mantener la coherencia visual de las flechas simplemente indicando dirección.
-
-                        // PESO
-                        $peso_trend = '';
-                        if ($prev_registro) {
-                            if ($registro->peso < $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
-                            elseif ($registro->peso > $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
-                        }
-
-                        // GRASA
-                        $grasa_trend = '';
-                        if ($prev_registro) {
-                            if ($registro->grasa_corporal < $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
-                            elseif ($registro->grasa_corporal > $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
-                        }
-
-                        // MUSCULO
-                        $musculo_trend = '';
-                        if ($prev_registro) {
-                            if ($registro->masa_muscular > $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--success);"></i></div>';
-                            elseif ($registro->masa_muscular < $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--danger);"></i></div>';
-                        }
-
-                        $dateObj = new DateTime($registro->fecha_registro);
-                        $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                        $mes_index = (int)$dateObj->format('n') - 1;
-                        $fecha_espanol = $dateObj->format('d') . ' ' . $meses[$mes_index] . ' ' . $dateObj->format('Y');
-                    ?>
+            <div style="overflow-x: auto;">
+                <table class="progress-table">
+                    <thead>
                         <tr>
-                            <td><?php echo $fecha_espanol; ?></td>
-                            <td><?php echo htmlspecialchars($registro->peso); ?> kg <?php echo $peso_trend; ?></td>
-                            <td><?php echo htmlspecialchars($registro->grasa_corporal); ?>% <?php echo $grasa_trend; ?></td>
-                            <td><?php echo htmlspecialchars($registro->masa_muscular); ?> kg <?php echo $musculo_trend; ?></td>
+                            <th>Fecha</th>
+                            <th>Peso</th>
+                            <th>Grasa</th>
+                            <th>Músculo</th>
                         </tr>
-                    <?php endforeach; ?>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // [PASO 2] GENERAR TABLA DE PROGRESO
+                        // Iteramos sobre el historial obtenido.
+                        // $historial_progreso ya está ordenado del más reciente al más antiguo.
+                        foreach ($historial_progreso as $index => $registro):
+                            // Lógica para comparar con el registro anterior (que en este array ordenado DESC es el siguiente elemento)
+                            // para determinar si hubo subida o bajada.
+                            $prev_registro = isset($historial_progreso[$index + 1]) ? $historial_progreso[$index + 1] : null;
 
-                    <?php if (empty($historial_progreso)): ?>
-                        <tr>
-                            <td colspan="4" style="text-align:center;">No hay registros de progreso recientes.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                            // Iconos de tendencia
+                            $trend_down = '<div class="trend-indicator"><i class="fas fa-arrow-down trend-down"></i></div>';
+                            $trend_up = '<div class="trend-indicator"><i class="fas fa-arrow-up trend-up"></i></div>';
+
+                            // Determinar tendencia (Peso: bajar es bueno/verde? Depende. Asumiremos visualización simple: Arriba=Rojo/Verde según contexto?)
+                            // Para simplificar: Arriba=Flecha Arriba, Abajo=Flecha Abajo. Colores: Up=Success(verde)? No siempre.
+                            // Usaremos la convención visual: 
+                            // Peso: si baja -> flecha abajo verde (trend-down es rojo en CSS, ajustaremos si es necesario o usaremos clases standard).
+                            // Vamos a usar colores neutros o clases existentes. En la plantilla original:
+                            // "trend-down" tiene color danger(rojo), "trend-up" tiene color success(verde).
+                            // Generalmente bajar peso y grasa es "bueno" -> verde, subir músculo es "bueno" -> verde.
+                            // Pero la clase "trend-down" es roja. Vamos a mantener la coherencia visual de las flechas simplemente indicando dirección.
+
+                            // PESO
+                            $peso_trend = '';
+                            if ($prev_registro) {
+                                if ($registro->peso < $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
+                                elseif ($registro->peso > $prev_registro->peso) $peso_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
+                            }
+
+                            // GRASA
+                            $grasa_trend = '';
+                            if ($prev_registro) {
+                                if ($registro->grasa_corporal < $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--success);"></i></div>';
+                                elseif ($registro->grasa_corporal > $prev_registro->grasa_corporal) $grasa_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--danger);"></i></div>';
+                            }
+
+                            // MUSCULO
+                            $musculo_trend = '';
+                            if ($prev_registro) {
+                                if ($registro->masa_muscular > $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-up" style="color: var(--success);"></i></div>';
+                                elseif ($registro->masa_muscular < $prev_registro->masa_muscular) $musculo_trend = '<div class="trend-indicator"><i class="fas fa-arrow-down" style="color: var(--danger);"></i></div>';
+                            }
+
+                            $dateObj = new DateTime($registro->fecha_registro);
+                            $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                            $mes_index = (int)$dateObj->format('n') - 1;
+                            $fecha_espanol = $dateObj->format('d') . ' ' . $meses[$mes_index] . ' ' . $dateObj->format('Y');
+                        ?>
+                            <tr>
+                                <td><?php echo $fecha_espanol; ?></td>
+                                <td><?php echo htmlspecialchars($registro->peso); ?> kg <?php echo $peso_trend; ?></td>
+                                <td><?php echo htmlspecialchars($registro->grasa_corporal); ?>% <?php echo $grasa_trend; ?></td>
+                                <td><?php echo htmlspecialchars($registro->masa_muscular); ?> kg <?php echo $musculo_trend; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+
+                        <?php if (empty($historial_progreso)): ?>
+                            <tr>
+                                <td colspan="4" style="text-align:center;">No hay registros de progreso recientes.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

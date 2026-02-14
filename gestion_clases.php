@@ -8,7 +8,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Verificar que tenga rol de admin
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
-    header("Location: index.php");
+    header("Location: acceso_denegado.php");
     exit();
 }
 

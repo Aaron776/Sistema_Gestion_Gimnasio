@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,7 +33,12 @@
             overflow-x: hidden;
         }
 
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             font-family: var(--font-main);
             font-weight: 700;
             margin-bottom: 1rem;
@@ -352,19 +358,50 @@
             opacity: 0.7;
         }
 
+        /* Estilo base para el toggle, oculto en desktop */
+        .menu-toggle {
+            display: none;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .navbar {
-                flex-direction: column;
-                gap: 20px;
+                /* flex-direction: column; Eliminar esto para mantener logo y toggle en línea */
+                justify-content: space-between;
+                padding: 0 10px;
+            }
+
+            .menu-toggle {
+                display: block;
+                cursor: pointer;
+                font-size: 1.5rem;
+                color: var(--light);
             }
 
             .nav-links {
-                margin-top: 20px;
+                position: absolute;
+                top: 70px;
+                /* Ajustar según altura del header */
+                left: 0;
+                width: 100%;
+                background-color: rgba(26, 26, 46, 0.98);
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                padding: 20px 0;
+                transform: translateY(-150%);
+                transition: transform 0.4s ease-in-out;
+                z-index: 999;
+                margin-top: 0;
+                /* Reset margin */
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
             }
 
             .nav-links li {
-                margin: 0 15px;
+                margin: 15px 0;
             }
 
             .hero h1 {
@@ -377,16 +414,21 @@
             }
 
             .auth-buttons {
-                margin-top: 20px;
+                display: none;
+                /* Ocultar botones header en móvil o moverlos dentro del menú si se prefiere */
+            }
+
+            /* Opción: Mostrar auth-buttons dentro del menú móvil si es necesario */
+            .nav-links .mobile-auth {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 15px;
             }
         }
 
         @media (max-width: 576px) {
-            .nav-links {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
+            /* .nav-links ya se maneja en el bloque anterior */
 
             .hero h1 {
                 font-size: 2rem;
@@ -404,12 +446,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <!-- Header y Navegación -->
     <header>
         <div class="container">
             <nav class="navbar">
                 <a href="#" class="logo">Power<span>Fit</span></a>
+                <div class="menu-toggle" id="mobile-menu">
+                    <span class="bar"><i class="fas fa-bars"></i></span>
+                </div>
                 <ul class="nav-links">
                     <li><a href="#">Inicio</a></li>
                     <li><a href="#">Servicios</a></li>
@@ -417,6 +463,11 @@
                     <li><a href="#">Entrenadores</a></li>
                     <li><a href="#">Precios</a></li>
                     <li><a href="#">Contacto</a></li>
+                    <!-- Botones de auth para móvil -->
+                    <li class="mobile-auth" style="display: none;"> <!-- Se mostrará vía CSS en móvil si se descomenta el estilo correspondiente, por ahora simple -->
+                        <a href="login.php" class="btn btn-secondary" style="margin-bottom: 10px;">Iniciar Sesión</a>
+                        <a href="registro.php" class="btn btn-primary">Registrarse</a>
+                    </li>
                 </ul>
                 <div class="auth-buttons">
                     <a href="login.php" class="btn btn-secondary">Iniciar Sesión</a>
@@ -529,6 +580,26 @@
     </footer>
 
     <script>
+        // Toggle Mobile Menu
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+
+                // Cambiar icono
+                const icon = menuToggle.querySelector('i');
+                if (navLinks.classList.contains('active')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+        }
+
         // Efecto de navbar al hacer scroll
         window.addEventListener('scroll', function() {
             const header = document.querySelector('header');
@@ -541,12 +612,20 @@
 
         // Animación suave para los enlaces
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+            anchor.addEventListener('click', function(e) {
+                // Si es un enlace interno, cerrar menú móvil si está abierto
+                if (navLinks.classList.contains('active')) {
+                    navLinks.classList.remove('active');
+                    const icon = menuToggle.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+
                 e.preventDefault();
-                
+
                 const targetId = this.getAttribute('href');
                 if (targetId === '#') return;
-                
+
                 const targetElement = document.querySelector(targetId);
                 if (targetElement) {
                     window.scrollTo({
@@ -558,4 +637,5 @@
         });
     </script>
 </body>
+
 </html>

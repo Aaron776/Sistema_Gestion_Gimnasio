@@ -3,7 +3,7 @@ require_once "autorizacion/auth.php"; // valida login y arranca sesión
 
 // Verificar que tenga rol de socio
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'socio') {
-    header("Location: index.php"); // si no lo mandamos al login
+    header("Location: acceso_denegado.php"); 
     exit();
 }
 require_once "templates/header.php";
