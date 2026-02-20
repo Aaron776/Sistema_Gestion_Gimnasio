@@ -53,11 +53,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['nombre']) && isset($_P
         $sql->bindParam(':email', $email, PDO::PARAM_STR);
         $sql->bindParam(':telefono', $telefono, PDO::PARAM_STR);
         $sql->bindParam(':password', $password_hash, PDO::PARAM_STR);
-        $sql->execute();
+        if ($sql->execute()) {
+            $id_usuario = $conexion->lastInsertId();
 
-        $_SESSION['exito'] = 'Usuario registrado con exito';
-        header('Location: ../registro.php');
-        exit;
+            // Iniciar sesión automáticamente
+            $_SESSION['id_usuario'] = $id_usuario;
+            $_SESSION['nombre'] = $nombre;
+            $_SESSION['apellido'] = $apellido;
+            $_SESSION['email'] = $email;
+            $_SESSION['rol'] = 'socio'; // Por defecto es socio segun la lógica del sistema
+            $_SESSION['logueado'] = true;
+
+            header('Location: ../dash_cliente.php');
+            exit;
+        } else {
+            $_SESSION['errores'] = ['Error al registrar el usuario'];
+            header('Location: ../registro.php');
+            exit;
+        }
     } else {
         $_SESSION['errores'] = $errores;
         header('Location: ../registro.php');
