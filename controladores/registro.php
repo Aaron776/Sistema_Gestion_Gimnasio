@@ -54,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['nombre']) && isset($_P
         $sql->bindParam(':telefono', $telefono, PDO::PARAM_STR);
         $sql->bindParam(':password', $password_hash, PDO::PARAM_STR);
         if ($sql->execute()) {
-            $id_usuario = $conexion->lastInsertId();
+            $id_usuario = $conexion->lastInsertId(); // Obtener el ID del último usuario recién registrado
 
-            // Iniciar sesión automáticamente
+            // Iniciar sesión automáticamente si se registra un socio nuevo
             $_SESSION['id_usuario'] = $id_usuario;
             $_SESSION['nombre'] = $nombre;
             $_SESSION['apellido'] = $apellido;
