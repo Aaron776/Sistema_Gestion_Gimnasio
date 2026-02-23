@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['membresia']) && isset(
         }
     }
 
-    $metodos=['efectivo', 'transferencia', 'tarjeta'];
+    $metodos = ['efectivo', 'transferencia', 'tarjeta'];
     // Validación de Método de Pago
     if (empty($metodo_pago)) {
         $errores[] = "Debes seleccionar un método de pago";
@@ -115,24 +115,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['membresia']) && isset(
 
     // Si no hay errores, proceder con el registro de la membresía y el pago
     if (empty($errores)) {
-        $sql = $conexion->prepare("INSERT INTO membresia_usuario (id_usuario, id_membresia, fecha_inicio, fecha_fin) VALUES (:id_usuario, :id_membresia, :fecha_inicio, :fecha_fin)");
-        $sql->bindParam(':id_usuario', $id_socio, PDO::PARAM_INT);
-        $sql->bindParam(':id_membresia', $id_membresia, PDO::PARAM_INT);
-        $sql->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
-        $sql->bindParam(':fecha_fin', $fecha_fin, PDO::PARAM_STR);
-        $sql->execute();
+        try {
+            // Se usa una transacción para asegurar que tanto el registro de la membresía como el del pago
+            // se realicen correctamente. Si uno de los dos falla, el sistema no guardará nada (rollback),
+            // evitando que un socio tenga membresía activa sin haber registrado su pago.
+            $conexion->beginTransaction();
 
-        // Insertar datos de Pago
-        $sql = $conexion->prepare("INSERT INTO pagos (id_usuario,id_membresia, monto, metodo_pago) VALUES (:id_usuario, :id_membresia, :monto, :metodo_pago)");
-        $sql->bindParam(':id_usuario', $id_socio, PDO::PARAM_INT);
-        $sql->bindParam(':id_membresia', $id_membresia, PDO::PARAM_INT);
-        $sql->bindParam(':monto', $monto, PDO::PARAM_STR);
-        $sql->bindParam(':metodo_pago', $metodo_pago, PDO::PARAM_STR);
-        $sql->execute();
+            // Insertar Membresía
+            $sql_membresia = $conexion->prepare("INSERT INTO membresia_usuario (id_usuario, id_membresia, fecha_inicio, fecha_fin) VALUES (:id_usuario, :id_membresia, :fecha_inicio, :fecha_fin)");
+            $sql_membresia->bindParam(':id_usuario', $id_socio, PDO::PARAM_INT);
+            $sql_membresia->bindParam(':id_membresia', $id_membresia, PDO::PARAM_INT);
+            $sql_membresia->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
+            $sql_membresia->bindParam(':fecha_fin', $fecha_fin, PDO::PARAM_STR);
+            $sql_membresia->execute();
 
-        $_SESSION['exito'] = "Membresía adquirida exitosamente";
-        header("Location: ../adquirir_membresia_socio.php");
-        exit();
+            // Insertar datos de Pago
+            $sql_pago = $conexion->prepare("INSERT INTO pagos (id_usuario,id_membresia, monto, metodo_pago) VALUES (:id_usuario, :id_membresia, :monto, :metodo_pago)");
+            $sql_pago->bindParam(':id_usuario', $id_socio, PDO::PARAM_INT);
+            $sql_pago->bindParam(':id_membresia', $id_membresia, PDO::PARAM_INT);
+            $sql_pago->bindParam(':monto', $monto, PDO::PARAM_STR);
+            $sql_pago->bindParam(':metodo_pago', $metodo_pago, PDO::PARAM_STR);
+            $sql_pago->execute();
+
+            $conexion->commit();
+
+            $_SESSION['exito'] = "Membresía adquirida exitosamente";
+            header("Location: ../adquirir_membresia_socio.php");
+            exit();
+        } catch (PDOException $e) {
+            $conexion->rollBack();
+            $_SESSION['errores'] = ['Error al procesar la solicitud. Por favor, intente de nuevo.'];
+            header("Location: ../adquirir_membresia_socio.php");
+            exit();
+        }
     } else {
         $_SESSION['errores'] = $errores;
         header("Location: ../adquirir_membresia_socio.php");

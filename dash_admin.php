@@ -29,7 +29,7 @@ $sql->execute();
 $totalIngresos = $sql->fetch(PDO::FETCH_OBJ);
 
 // Obtener socios recientes
-$sql = $conexion->prepare("SELECT CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre, usuarios.email as email, membresias.nombre as membresia FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ORDER BY usuarios.fecha_registro DESC LIMIT 5");
+$sql = $conexion->prepare("SELECT CONCAT(usuarios.nombre,' ',usuarios.apellido) as nombre, usuarios.email as email, membresias.nombre as membresia, usuarios.fecha_registro FROM membresia_usuario INNER JOIN usuarios ON membresia_usuario.id_usuario = usuarios.id INNER JOIN membresias ON membresia_usuario.id_membresia = membresias.id WHERE usuarios.rol = 'socio' ORDER BY usuarios.fecha_registro DESC LIMIT 5");
 $sql->execute();
 $sociosRecientes = $sql->fetchAll(PDO::FETCH_OBJ);
 

@@ -461,7 +461,7 @@ if (empty($_SESSION['csrf_token'])) {
 
                     <div class="form-group">
                         <label class="form-label" for="registerName">Apellido</label>
-                        <input type="text" class="form-input" name="apellido"" id="registerName" placeholder="Tu nombre completo" required>
+                        <input type="text" class="form-input" name="apellido" id="registerName" placeholder="Tu nombre completo" required>
                     </div>
 
                     <div class="form-group">

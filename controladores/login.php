@@ -3,6 +3,12 @@ session_start();
 require_once '../conexion/bd.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_POST['password'])) {
+    // Validación de token CSRF
+    if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['errores'] = ['Error de validación CSRF. Intente de nuevo.'];
+        header('Location: ../login.php');
+        exit;
+    }
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
     $errores = [];
@@ -27,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_P
             $_SESSION['bloqueado_tiempo'] = time();
         }
         $tiempo_transcurrido = time() - $_SESSION['bloqueado_tiempo'];
-        $tiempo_espera = 60;
+        $tiempo_espera = 300; // 5 minutos
 
         if ($tiempo_transcurrido < $tiempo_espera) {
             $restante = $tiempo_espera - $tiempo_transcurrido;
             $_SESSION['errores'] = ["Demasiados intentos. Intenta en $restante segundos."];
-            header("Location: ../login.php");
+            header('Location: ../login.php');
             exit();
         } else {
             $_SESSION['intentos'] = 0;
@@ -78,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'  && isset($_POST['email']) && isset($_P
             $_SESSION['intentos']++;
             if ($_SESSION['intentos'] >= 5) {
                 $_SESSION['bloqueado_tiempo'] = time();
-                $errores[] = "Demasiados intentos fallidos. Intenta nuevamente en 1 minuto.";
+                $errores[] = "Demasiados intentos fallidos. Tu cuenta ha sido bloqueada por 5 minutos.";
             } else {
                 $errores[] = "Email o contraseña incorrectos.";
             }

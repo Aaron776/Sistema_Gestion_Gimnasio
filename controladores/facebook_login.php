@@ -18,7 +18,7 @@ $_SESSION['oauth_state'] = $state;
 $params = [
     'client_id' => FACEBOOK_APP_ID,
     'redirect_uri' => FACEBOOK_REDIRECT_URI,
-    'scope' => 'email,public_profile',
+    'scope' => 'public_profile,email',
     'state' => $state
 ];
 

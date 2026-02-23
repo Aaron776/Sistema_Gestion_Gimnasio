@@ -1,5 +1,10 @@
 <?php
 session_start();
+
+// Generar token CSRF si no existe
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -452,6 +457,7 @@ session_start();
                 <p class="form-subtitle">Accede a tu cuenta para gestionar tu membresía</p>
 
                 <form class="auth-form" id="loginForm" action="controladores/login.php" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token']; ?>">
                     <?php if (isset($_SESSION['errores'])) : ?>
                         <div class="alert alert-danger">
                             <ul>
