@@ -696,7 +696,7 @@ $mostrar_cancelar = $horas_transcurridas <= 48;
                     </div>
 
                     <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; align-items: flex-start;">
-                        <a href="mis-clases.html" class="secondary-btn">
+                        <a href="clases_socio.php" class="secondary-btn">
                             <i class="fas fa-calendar-alt"></i> Ver mis clases
                         </a>
                         <?php if ($mostrar_cancelar): ?>
